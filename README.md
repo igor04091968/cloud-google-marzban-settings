@@ -66,7 +66,7 @@ kubectl get pods -n marzban
 
 После успешного развертывания и запуска туннеля, панель управления Marzban будет доступна по адресу:
 
-`https://vds1.iri1968.dpdns.org`
+`https://vds1.DOMAIN.org`
 
 ## Создание первого администратора
 
@@ -100,7 +100,7 @@ graph TD
         U[Пользователь Marzban]
     end
 
-    subgraph "VDS-сервер (vds1.iri1968.dpdns.org)"
+    subgraph "VDS-сервер (vds1.DOMAIN.org)"
         Nginx[Nginx:443]
         ChiselServer[Chisel Server:8443]
     end
@@ -175,11 +175,11 @@ graph TD
 
 *   Перезагрузить конфигурацию Nginx:
     ```bash
-    ssh root@vds1.iri1968.dpdns.org "systemctl reload nginx"
+    ssh root@vds1.DOMAIN.org "systemctl reload nginx"
     ```
 *   Проверить статус сервиса туннеля:
     ```bash
-    ssh root@vds1.iri1968.dpdns.org "systemctl status marzban-tunnel.service"
+    ssh root@vds1.DOMAIN.org "systemctl status marzban-tunnel.service"
     ```
 
 ## Скрипты
