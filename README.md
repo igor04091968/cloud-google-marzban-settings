@@ -91,6 +91,97 @@ kubectl get pods -n marzban
 
 После выполнения этой команды вы сможете войти в панель управления с указанными учетными данными.
 
+## Сетевая схема взаимодействия
+
+```mermaid
+graph TD
+    subgraph "Интернет"
+        A[Администратор]
+        U[Пользователь Marzban]
+    end
+
+    subgraph "VDS-сервер (vds1.iri1968.dpdns.org)"
+        Nginx[Nginx:443]
+        ChiselServer[Chisel Server:8443]
+    end
+
+    subgraph "Среда Google Cloud Shell"
+        ChiselClient[Chisel Client]
+        Kubectl[kubectl]
+    end
+
+    subgraph "Kubernetes Кластер (Minikube)"
+        Service[Service marzban-controller]
+        Pod[Pod marzban-controller]
+        Container1[Container marzban]
+        Container2[Container socat]
+    end
+
+    A -- SSH --> VDS-сервер
+    A -- kubectl --> Kubectl
+    U -- HTTPS --> Nginx
+    Nginx -- HTTP --> ChiselServer
+    ChiselServer <--> ChiselClient
+    ChiselClient -- Переброс порта --> Service
+    Kubectl -- Управление --> Kubernetes
+    Service -- > Pod
+    Pod -- > Container2
+    Container2 -- > Container1
+```
+
+## Основные команды управления
+
+### Kubernetes (`kubectl`)
+
+*   Посмотреть все поды в пространстве `marzban`:
+    ```bash
+    kubectl get pods -n marzban
+    ```
+*   Посмотреть логи контроллера Marzban:
+    ```bash
+    kubectl logs -n marzban -l app=marzban-controller --tail=100
+    ```
+*   Применить изменения из файла конфигурации:
+    ```bash
+    kubectl apply -f kubernetes/marzban-configmap.yaml
+    ```
+*   Перезапустить сервис Marzban для применения конфигурации:
+    ```bash
+    kubectl rollout restart deployment marzban-controller -n marzban
+    ```
+*   Выполнить команду внутри пода:
+    ```bash
+    kubectl exec -it <ИМЯ_ПОДА> -n marzban -- <КОМАНДА>
+    ```
+
+### Marzban CLI (`marzban-cli`)
+
+*   Создать нового администратора:
+    ```bash
+    echo -e '\n' | kubectl exec -i <ИМЯ_ПОДА> -n marzban -- \
+    env MARZBAN_ADMIN_PASSWORD='ВАШ_ПАРОЛЬ' \
+    marzban-cli admin create --username 'ВАШ_ЛОГИН' --sudo
+    ```
+*   Посмотреть список администраторов:
+    ```bash
+    kubectl exec <ИМЯ_ПОДА> -n marzban -- marzban-cli admin list
+    ```
+*   Удалить администратора:
+    ```bash
+    echo "y" | kubectl exec -i <ИМЯ_ПОДА> -n marzban -- marzban-cli admin delete --username <ЛОГИН>
+    ```
+
+### VDS Сервер
+
+*   Перезагрузить конфигурацию Nginx:
+    ```bash
+    ssh root@vds1.iri1968.dpdns.org "systemctl reload nginx"
+    ```
+*   Проверить статус сервиса туннеля:
+    ```bash
+    ssh root@vds1.iri1968.dpdns.org "systemctl status marzban-tunnel.service"
+    ```
+
 ## Скрипты
 
 *   `scripts/update_xray_proxies.py`: Скрипт для обновления прокси в Xray.
