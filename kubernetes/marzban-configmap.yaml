@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: marzban-config
+  namespace: marzban
+data:
+  SQLALCHEMY_DATABASE_URL: "sqlite:////var/lib/marzban/db.sqlite3"
+  UVICORN_HOST: "0.0.0.0"
+  UVICORN_PORT: "8000"

@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marzban-node
+  namespace: marzban
+  labels:
+    app: marzban-node
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: marzban-node
+  template:
+    metadata:
+      labels:
+        app: marzban-node
+    spec:
+      containers:
+      - name: marzban-node
+        image: gozargah/marzban-node:latest
+        ports:
+        - containerPort: 62050
+        envFrom:
+        - configMapRef:
+            name: marzban-node-config
+        volumeMounts:
+        - name: marzban-node-certs
+          mountPath: /etc/marzban-node/certs
+          readOnly: true
+      volumes:
+      - name: marzban-node-certs
+        secret:
+          secretName: marzban-node-certs
