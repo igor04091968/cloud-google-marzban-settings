@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: marzban-controller
+  namespace: marzban
+spec:
+  type: LoadBalancer
+  selector:
+    app: marzban-controller
+  ports:
+    - name: https
+      protocol: TCP
+      port: 8443
+      targetPort: 8080
