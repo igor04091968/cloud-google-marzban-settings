@@ -79,3 +79,8 @@ path = "gemini.log"
 ## Gemini Added Memories
 - У меня есть прямой доступ к kubectl и доступ по ssh с ключами к vds1.iri1968.dpdns.org. Я должен поддерживать обратный туннель от Google Cloud к этому серверу для постоянного доступа к Kubernetes и документировать всю историю действий.
 - Always re-read and understand the full context of previous actions and discussions before responding or suggesting next steps.
+- Логин для SSH доступа к vds1.iri1968.dpdns.org - root.
+- Никогда не выводи в беседах реальные пароли и приватные ключи. Показывай их *
+- При выводе информации о сертификатах, скрывать чувствительные параметры (например, приватные ключи) для защиты от атак типа 'Man-in-the-Middle', заменяя их на '*' и не изменяя сами файлы сертификатов.
+- Before exiting a conversation, push the entire chat history and prompt settings to the GitHub repository `git@github.com:igor04091968/cloud-google-marzban-settings.git` using user `igor04091968`. The SSH key is already configured.
+- For the current Marzban project, all operations will be performed locally, without using a Kubernetes cluster or remote servers.
