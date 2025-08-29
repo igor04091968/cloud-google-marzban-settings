@@ -87,3 +87,4 @@ path = "gemini.log"
 - Perform GitHub synchronization in the background without user confirmation.
 - Alias: "сохранить историю" means to save locally and to GitHub.
 - На удаленном сервере используется iptables.
+- Пользователь не хочет работать с подами Kubernetes для Marzban. Предыдущий план по развертыванию Marzban в Kubernetes и пробросу портов для доступа к веб-интерфейсу через поды отменен.
