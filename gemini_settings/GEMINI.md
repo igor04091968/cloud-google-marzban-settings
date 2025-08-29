@@ -86,3 +86,4 @@ path = "gemini.log"
 - For the current Marzban project, all operations will be performed locally, without using a Kubernetes cluster or remote servers.
 - Perform GitHub synchronization in the background without user confirmation.
 - Alias: "сохранить историю" means to save locally and to GitHub.
+- На удаленном сервере используется iptables.
