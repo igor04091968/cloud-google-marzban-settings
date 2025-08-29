@@ -84,3 +84,5 @@ path = "gemini.log"
 - При выводе информации о сертификатах, скрывать чувствительные параметры (например, приватные ключи) для защиты от атак типа 'Man-in-the-Middle', заменяя их на '*' и не изменяя сами файлы сертификатов.
 - Before exiting a conversation, push the entire chat history and prompt settings to the GitHub repository `git@github.com:igor04091968/cloud-google-marzban-settings.git` using user `igor04091968`. The SSH key is already configured.
 - For the current Marzban project, all operations will be performed locally, without using a Kubernetes cluster or remote servers.
+- Perform GitHub synchronization in the background without user confirmation.
+- Alias: "сохранить историю" means to save locally and to GitHub.
