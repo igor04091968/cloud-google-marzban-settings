@@ -88,3 +88,11 @@ path = "gemini.log"
 - Alias: "сохранить историю" means to save locally and to GitHub.
 - На удаленном сервере используется iptables.
 - Пользователь не хочет работать с подами Kubernetes для Marzban. Предыдущий план по развертыванию Marzban в Kubernetes и пробросу портов для доступа к веб-интерфейсу через поды отменен.
+- User will run 'chisel client --auth cloud:2025 34.141.184.154:993 R:8443:localhost:8000' on vds1.iri1968.dpdns.org and provide the output.
+- The user wants to deploy Marzban to Kubernetes using Minikube, following the README.md instructions. The previous plan for a local setup is cancelled.
+- The chisel server has been started on the remote VDS vds1.iri1968.dpdns.org on port 8443.
+- I have direct SSH access to vds1.iri1968.dpdns.org as root and am responsible for managing services like the chisel server on it. I must not commit private keys to git.
+- The user's workflow for managing the chisel server on the VDS is: 1. Kill any existing process by name (pkill chisel). 2. Start the server in the background. 3. Verify the process is running with ps.
+- The user's latest workflow for chisel: 1. Kill the specific server process with `pkill -f "chisel server --port 8443 --reverse"`. 2. Start the new server with `nohup ... > /dev/null 2>&1 &` to prevent hangs. 3. Verify with `ps`.
+- The Marzban deployment project is complete. The application is running in Kubernetes, the tunnel is active, an admin user is created, and all documentation and scripts in the `cloud-google-marzban-settings` repository have been corrected and updated.
+- The Marzban repository now contains a fully automated script (scripts/setup_app.sh) for deploying the application to Minikube, and all documentation has been updated to reflect this.
