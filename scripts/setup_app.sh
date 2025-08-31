@@ -1,105 +1,81 @@
 #!/bin/bash
+#
+# Скрипт для полного автоматического развертывания Marzban в Minikube.
+# ВНИМАНИЕ: Этот скрипт предназначен для выполнения в среде, где уже есть доступ
+# к kubectl, minikube и репозиторию проекта.
+# Он НЕ настраивает удаленный VDS-сервер.
+
 # Используем строгий режим для надежности
 set -euo pipefail
 
-echo "--- Запуск универсального скрипта для установки и запуска стартапа ---"
+# --- Конфигурация ---
+ADMIN_USERNAME="admin"
+ADMIN_PASSWORD="04091968"
+NAMESPACE="marzban"
+KUBERNETES_DIR="../kubernetes"
+# --- Конец конфигурации ---
 
-# --- Шаг 1: Проверка прав суперпользователя ---
-if [ "$(id -u)" -ne 0 ]; then
-    echo "ОШИБКА: Этот скрипт требует прав суперпользователя. Пожалуйста, запустите его с помощью sudo."
-    exit 1
-fi
+echo "--- Запуск скрипта для развертывания Marzban в Kubernetes ---"
 
-# --- Шаг 2: Установка системных зависимостей (для Debian/Ubuntu) ---
-echo "--> Обновление списка пакетов..."
-apt-get update
-
-echo "--> Установка базовых зависимостей (python, pip, curl)..."
-apt-get install -y python3 python3-pip curl ca-certificates gnupg lsb-release
-
-# --- Шаг 3: Установка Docker ---
-if ! command -v docker &> /dev/null
-then
-    echo "--> Docker не найден. Устанавливаю Docker..."
-    install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    chmod a+r /etc/apt/keyrings/docker.gpg
-    echo \
-      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-      $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-    apt-get update
-    apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+# --- Шаг 1: Запуск Minikube ---
+echo "--> Проверка статуса Minikube..."
+if ! minikube status &> /dev/null; then
+    echo "--> Minikube не запущен. Запускаю..."
+    minikube start
 else
-    echo "--> Docker уже установлен."
+    echo "--> Minikube уже запущен."
 fi
 
-# --- Шаг 4: Создание файлов приложения ---
-APP_DIR="/opt/my-startup"
-echo "--> Создание директории для приложения в $APP_DIR..."
-mkdir -p $APP_DIR
-cd $APP_DIR
-
-echo "--> Создание файла requirements.txt..."
-cat <<EOF > requirements.txt
-Flask
-gunicorn
-EOF
-
-echo "--> Создание файла app.py..."
-cat <<EOF > app.py
-from flask import Flask
-import os
-
-app = Flask(__name__)
-
-@app.route('/')
-def hello_world():
-    return 'Мой стартап работает!\n'
-
-if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
-EOF
-
-echo "--> Создание файла Dockerfile..."
-cat <<EOF > Dockerfile
-FROM python:3.9-slim
-WORKDIR /app
-COPY requirements.txt requirements.txt
-RUN pip install -r requirements.txt
-COPY . . 
-EXPOSE 8080
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]
-EOF
-
-echo "--> Файлы приложения успешно созданы в $APP_DIR"
-
-# --- Шаг 5: Сборка и запуск Docker-контейнера ---
-echo "--> Сборка Docker-образа 'my-startup-app'..."
-docker build -t my-startup-app .
-
-# Проверяем, не запущен ли уже контейнер с таким именем
-if [ "$(docker ps -q -f name=^/startup-container$)" ]; then
-    echo "--> Контейнер 'startup-container' уже запущен. Перезапускаю..."
-    docker stop startup-container
-    docker rm startup-container
-elif [ "$(docker ps -aq -f status=exited -f name=^/startup-container$)" ]; then
-    echo "--> Найден остановленный контейнер 'startup-container'. Удаляю его..."
-    docker rm startup-container
+# --- Шаг 2: Создание пространства имен ---
+echo "--> Проверка пространства имен '${NAMESPACE}'..."
+if ! kubectl get namespace ${NAMESPACE} &> /dev/null; then
+    echo "--> Создание пространства имен '${NAMESPACE}'..."
+    kubectl create namespace ${NAMESPACE}
+else
+    echo "--> Пространство имен '${NAMESPACE}' уже существует."
 fi
 
-echo "--> Запуск контейнера 'startup-container' на порту 8080..."
-docker run -d -p 8080:8080 --name startup-container my-startup-app
+# --- Шаг 3: Создание секрета для Marzban Node ---
+SECRET_NAME="marzban-node-certs"
+echo "--> Проверка секрета '${SECRET_NAME}'..."
+if ! kubectl get secret ${SECRET_NAME} -n ${NAMESPACE} &> /dev/null; then
+    echo "--> Создание SSL-сертификата и секрета '${SECRET_NAME}'..."
+    openssl req -x509 -newkey rsa:2048 -keyout tls.key -out tls.crt -days 365 -nodes -subj "/CN=marzban-node"
+    kubectl create secret tls ${SECRET_NAME} --cert=tls.crt --key=tls.key -n ${NAMESPACE}
+    rm tls.key tls.crt
+    echo "--> Секрет '${SECRET_NAME}' успешно создан."
+else
+    echo "--> Секрет '${SECRET_NAME}' уже существует."
+fi
 
-# --- Шаг 6: Завершение ---
+# --- Шаг 4: Применение манифестов Kubernetes ---
+echo "--> Применение всех конфигурационных файлов из директории '${KUBERNETES_DIR}'..."
+kubectl apply -f ${KUBERNETES_DIR}
+
+# --- Шаг 5: Ожидание готовности подов ---
+echo "--> Ожидание полной готовности всех подов в пространстве '${NAMESPACE}'... (может занять до 5 минут)"
+kubectl wait --for=condition=ready pod --all -n ${NAMESPACE} --timeout=300s
+echo "--> Все поды успешно запущены и работают."
+
+# --- Шаг 6: Создание суперадминистратора ---
+echo "--> Создание суперадминистратора с логином '${ADMIN_USERNAME}'..."
+CONTROLLER_POD=$(kubectl get pods -n ${NAMESPACE} -l app=marzban-controller -o jsonpath='{.items[0].metadata.name}')
+
+# Проверяем, не создан ли уже такой пользователь
+ADMIN_LIST=$(kubectl exec ${CONTROLLER_POD} -n ${NAMESPACE} -- marzban-cli admin list)
+if echo "${ADMIN_LIST}" | grep -q "${ADMIN_USERNAME}"; then
+    echo "--> Администратор '${ADMIN_USERNAME}' уже существует."
+else
+    echo -e '\n' | kubectl exec -i ${CONTROLLER_POD} -n ${NAMESPACE} -- \
+    env MARZBAN_ADMIN_PASSWORD="${ADMIN_PASSWORD}" \
+    marzban-cli admin create --username "${ADMIN_USERNAME}" --sudo
+    echo "--> Администратор '${ADMIN_USERNAME}' успешно создан."
+fi
+
+# --- Шаг 7: Завершение ---
 echo ""
-echo "--- УСПЕХ! Ваше приложение запущено в Docker-контейнере ---"
+echo "--- УСПЕХ! Локальная часть Marzban полностью развернута в Minikube ---"
 echo ""
-echo "Вы можете проверить его работу, выполнив в терминале этого сервера:"
-echo "curl http://localhost:8080"
-echo ""
-echo "Посмотреть логи приложения:"
-echo "docker logs startup-container"
-echo ""
-echo "Остановить приложение:"
-echo "docker stop startup-container"
+echo "Не забудьте выполнить шаги по настройке Nginx и Chisel на вашем VDS-сервере,"
+echo "а также запустить клиент Chisel для проброса портов, как описано в README.md."
 echo ""
