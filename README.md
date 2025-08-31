@@ -57,28 +57,50 @@ rm tls.key tls.crt
 kubectl apply -f kubernetes/
 ```
 
-### 5. Настройка реверс-туннеля
+### 5. Настройка сервера туннеля (VDS)
 
 Для доступа к панели Marzban извне кластера используется реверс-туннель, созданный с помощью `chisel`.
 
-На вашем внешнем сервере (например, VDS), куда указывает ваше доменное имя, запустите сервер `chisel`:
+На вашем внешнем сервере (например, VDS), куда указывает ваше доменное имя, запустите сервер `chisel` в фоновом режиме:
 
 ```bash
-chisel server --port 8443 --reverse &
+nohup chisel server --port 8443 --reverse > /dev/null 2>&1 &
 ```
 
-### 6. Настройка сервиса туннеля
+### 6. Настройка клиента туннеля (Cloud Shell)
 
-Сервис `scripts/marzban-tunnel.service` предназначен для автоматического запуска и поддержания клиента `chisel` на машине, где работает ваш кластер Kubernetes (или на машине, имеющей доступ к кластеру).
+Теперь, когда сервер `chisel` запущен на VDS, необходимо запустить клиент на машине с доступом к Kubernetes (в нашем случае, в Cloud Shell), чтобы "пробросить" сервис наружу.
 
-Отредактируйте файл, если необходимо, указав правильный адрес вашего сервера с `chisel`.
+Есть два способа это сделать:
 
-Затем скопируйте этот файл в `/etc/systemd/system/`, включите и запустите сервис:
+**Способ А: Ручной запуск (для отладки)**
+
+Вы можете запустить клиент `chisel` напрямую. Это полезно для быстрой проверки. Убедитесь, что у файла `chisel` есть права на выполнение (`chmod +x chisel`).
 
 ```bash
+./chisel client vds1.iri1968.dpdns.org:8443 R:8000:marzban-controller.marzban.svc.cluster.local:8443
+```
+Эта команда подключится к серверу и откроет туннель. Сессия будет активна, пока вы не прервете команду.
+
+**Способ Б: Запуск как сервис (рекомендуется)**
+
+Для постоянной работы туннеля в фоновом режиме мы используем `systemd`.
+
+1.  **Проверьте и исправьте сервисный файл:**
+    Мы уже исправили файл `scripts/marzban-tunnel.service`, чтобы он содержал правильную команду для `chisel`.
+
+2.  **Установите и запустите сервис:**
+    Скопируйте файл в директорию `systemd`, включите автозагрузку и запустите его.
+
+    ```bash
 sudo cp scripts/marzban-tunnel.service /etc/systemd/system/
 sudo systemctl enable marzban-tunnel.service
 sudo systemctl start marzban-tunnel.service
+```
+
+3.  **Проверьте статус сервиса:**
+    ```bash
+sudo systemctl status marzban-tunnel.service
 ```
 
 ### 7. Проверка развертывания
@@ -112,7 +134,7 @@ kubectl get pods -n marzban
     Выполните следующую команду, подставив имя вашего пода, а также желаемые `ВАШ_ЛОГИН` и `ВАШ_ПАРОЛЬ`. Флаг `--sudo` делает пользователя суперадминистратором.
 
     ```bash
-    echo -e '\n' | kubectl exec -i <ИМЯ_ПОДА> -n marzban -- \
+echo -e '\n' | kubectl exec -i <ИМЯ_ПОДА> -n marzban -- \
     env MARZBAN_ADMIN_PASSWORD='ВАШ_ПАРОЛЬ' \
     marzban-cli admin create --username 'ВАШ_ЛОГИН' --sudo
     ```
@@ -186,7 +208,7 @@ graph TD
 
 *   Создать нового администратора:
     ```bash
-    echo -e '\n' | kubectl exec -i <ИМЯ_ПОДА> -n marzban -- \
+echo -e '\n' | kubectl exec -i <ИМЯ_ПОДА> -n marzban -- \
     env MARZBAN_ADMIN_PASSWORD='ВАШ_ПАРОЛЬ' \
     marzban-cli admin create --username 'ВАШ_ЛОГИН' --sudo
     ```
