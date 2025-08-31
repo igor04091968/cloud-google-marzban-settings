@@ -18,22 +18,22 @@ This setup successfully exposes the Marzban panel to the public internet through
 
 ### Resetting Admin Password / Users
 
-**Problem:** It is not possible to manage users (create, delete, reset password) using `marzban cli` inside the `gozargah/marzban:latest` container via `kubectl exec`. The container is a minimal image that does not include the `marzban` CLI tool in its `PATH` or easily accessible locations.
+**Problem:** It is not possible to manage users (create, delete, reset password) using `marzban cli` inside the `gozargah/marzban:latest` container. The container is a minimal image that does not include the CLI tool in its `PATH`.
 
 **Solution (Full Reset):**
 
-The only reliable method to reset user data is to completely wipe the database and let Marzban re-initialize it.
+To reset all users and settings, a script has been created to automate the process.
 
 **Warning:** This will delete ALL users and settings.
 
-1.  **Delete the database file:** The database is a single SQLite file located in the persistent volume. Execute the following command, replacing `<pod-name>` with the name of your `marzban-controller` pod:
-    ```bash
-    kubectl exec -n marzban <pod-name> -- rm /var/lib/marzban/db.sqlite3
-    ```
+**Automated Method:**
 
-2.  **Restart the controller pod:** Deleting the pod will cause Kubernetes to automatically recreate it. The new pod will start with a fresh, empty database.
-    ```bash
-    kubectl delete pod -n marzban -l app=marzban-controller
-    ```
+Run the following script from the root of the `cloud-google-marzban-settings-repo` directory:
 
-3.  **Create a new admin:** After the pod restarts, navigate to the Marzban web UI. You will be prompted to create the first admin user again.
+```bash
+./scripts/reset_marzban_db.sh
+```
+
+The script will automatically find the controller pod, delete the database, restart the pod, and wait for it to be ready.
+
+After the script finishes, navigate to the Marzban web UI to create the first admin user again.
