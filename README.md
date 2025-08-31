@@ -125,8 +125,8 @@ kubectl get pods -n marzban
 1.  **Найдите имя пода `marzban-controller`:**
 
     ```bash
-    kubectl get pods -n marzban -l app=marzban-controller
-    ```
+kubectl get pods -n marzban -l app=marzban-controller
+```
     Скопируйте имя пода, оно будет выглядеть примерно так: `marzban-controller-xxxxxxxxxx-xxxxx`.
 
 2.  **Создайте нового администратора:**
@@ -135,8 +135,8 @@ kubectl get pods -n marzban
 
     ```bash
 echo -e '\n' | kubectl exec -i <ИМЯ_ПОДА> -n marzban -- \
-    env MARZBAN_ADMIN_PASSWORD='ВАШ_ПАРОЛЬ' \
-    marzban-cli admin create --username 'ВАШ_ЛОГИН' --sudo
+    env MARZBAN_ADMIN_PASSWORD=\'ВАШ_ПАРОЛЬ\' \
+    marzban-cli admin create --username \'ВАШ_ЛОГИН\' --sudo
     ```
 
 После выполнения этой команды вы сможете войти в панель управления с указанными учетными данными.
@@ -150,7 +150,7 @@ graph TD
         U[Пользователь Marzban]
     end
 
-    subgraph "VDS-сервер (vds1.DOMAIN.org)"
+    subgraph "VDS-сервер (vds1.iri1968.dpdns.org)"
         Nginx[Nginx:443]
         ChiselServer[Chisel Server:8443]
     end
@@ -209,8 +209,8 @@ graph TD
 *   Создать нового администратора:
     ```bash
 echo -e '\n' | kubectl exec -i <ИМЯ_ПОДА> -n marzban -- \
-    env MARZBAN_ADMIN_PASSWORD='ВАШ_ПАРОЛЬ' \
-    marzban-cli admin create --username 'ВАШ_ЛОГИН' --sudo
+    env MARZBAN_ADMIN_PASSWORD=\'ВАШ_ПАРОЛЬ\' \
+    marzban-cli admin create --username \'ВАШ_ЛОГИН\' --sudo
     ```
 *   Посмотреть список администраторов:
     ```bash
@@ -232,32 +232,32 @@ echo -e '\n' | kubectl exec -i <ИМЯ_ПОДА> -n marzban -- \
     ssh root@vds1.DOMAIN.org "systemctl status marzban-tunnel.service"
     ```
 
-## Скрипты
+## Автоматическое развертывание (Cloud Shell)
 
-*   `scripts/update_xray_proxies.py`: Скрипт для обновления прокси в Xray.
-*   `scripts/marzban-tunnel.service`: Файл сервиса systemd для автоматического запуска туннеля `chisel`.
+В качестве альтернативы пошаговому выполнению, в репозитории есть скрипт `scripts/setup_app.sh`, который полностью автоматизирует развертывание локальной части Marzban в Minikube (шаги 2-7 из основной инструкции).
 
-## Быстрый старт на новом сервере
+**Что делает скрипт:**
+*   Запускает Minikube.
+*   Создает `namespace` и `secret` для сертификата.
+*   Применяет все манифесты Kubernetes.
+*   Ожидает, пока все компоненты будут запущены.
+*   Создает суперадминистратора с учетными данными `admin` / `04091968`.
 
-В репозитории есть универсальный скрипт `scripts/setup_app.sh`, который позволяет развернуть простое веб-приложение в Docker-контейнере на любом "чистом" сервере с ОС Debian или Ubuntu. Скрипт автоматически устанавливает все зависимости (Docker, Python) и запускает приложение.
+**Использование:**
 
-### Использование
-
-1.  **Подключитесь к вашему новому серверу по SSH.**
-
-2.  **Скачайте скрипт из репозитория:**
+1.  **Перейдите в директорию со скриптами:**
     ```bash
-    curl -o setup_app.sh https://raw.githubusercontent.com/igor04091968/cloud-google-marzban-settings/master/scripts/setup_app.sh
+    cd scripts
     ```
 
-3.  **Сделайте скрипт исполняемым:**
+2.  **Сделайте скрипт исполняемым:**
     ```bash
     chmod +x setup_app.sh
     ```
 
-4.  **Запустите скрипт с правами суперпользователя:**
+3.  **Запустите скрипт:**
     ```bash
-    sudo ./setup_app.sh
+    ./setup_app.sh
     ```
 
-После выполнения скрипта ваше приложение будет запущено и доступно на порту `8080` вашего сервера.
+**ВНИМАНИЕ:** Скрипт не настраивает удаленный VDS-сервер. Шаги по настройке Nginx и запуску `chisel server` на VDS по-прежнему необходимо выполнять вручную.
