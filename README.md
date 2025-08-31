@@ -190,6 +190,12 @@ echo -e '\n' | kubectl exec -i <ИМЯ_ПОДА> -n marzban -- \
     echo "y" | kubectl exec -i <ИМЯ_ПОДА> -n marzban -- marzban-cli admin delete --username <ЛОГИН>
     ```
 
+*   Изменить пароль пользователя (интерактивно):
+    ```bash
+    # Замените <ИМЯ_ПОДА> и <ЛОГИН> на актуальные
+    kubectl exec -it <ИМЯ_ПОДА> -n marzban -- marzban-cli admin update -u <ЛОГИН>
+    ```
+
 ### VDS Сервер
 
 *   Перезагрузить конфигурацию Nginx:
