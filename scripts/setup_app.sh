@@ -8,11 +8,14 @@
 # Используем строгий режим для надежности
 set -euo pipefail
 
+# Определяем директорию, где находится сам скрипт, для корректной работы с путями
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 # --- Конфигурация ---
 ADMIN_USERNAME="admin"
 ADMIN_PASSWORD="04091968"
 NAMESPACE="marzban"
-KUBERNETES_DIR="../kubernetes"
+KUBERNETES_DIR="${SCRIPT_DIR}/../kubernetes"
 # --- Конец конфигурации ---
 
 echo "--- Запуск скрипта для развертывания Marzban в Kubernetes ---"
