@@ -57,53 +57,32 @@ rm tls.key tls.crt
 kubectl apply -f kubernetes/
 ```
 
-### 5. Настройка сервера туннеля (VDS)
+### 5. Настройка внешнего доступа (VDS и Туннель)
 
-Для доступа к панели Marzban извне кластера используется реверс-туннель, созданный с помощью `chisel`.
+Доступ к панели Marzban, работающей внутри Kubernetes, организован через сложную цепочку проксирования, которая выводит сервис на ваш VDS.
 
-На вашем внешнем сервере (например, VDS), куда указывает ваше доменное имя, запустите сервер `chisel` в фоновом режиме:
+**Компоненты на VDS:**
 
+1.  **Nginx:** Принимает HTTPS трафик на порт **443**. Отвечает за SSL/TLS шифрование.
+2.  **Python-скрипт:** Локальный скрипт, который слушает порт **8000** и преобразует входящие HTTP запросы в SOCKS5.
+3.  **Chisel Server:** Основной сервер туннеля. Он запущен с параметром `--socks5` и слушает порт **993** для подключения клиентов.
+
+**Схема работы на VDS:**
+`Nginx (443) -> Python-скрипт (8000) -> Chisel SOCKS5 (993)`
+
+**Команда для запуска Chisel Server на VDS:**
 ```bash
-nohup chisel server --port 8443 --reverse > /dev/null 2>&1 &
+# Убедитесь, что chisel находится в /usr/local/bin/chisel
+nohup /usr/local/bin/chisel server --port 993 --reverse --socks5 --auth cloud:2025 > /dev/null 2>&1 &
 ```
 
-### 6. Настройка клиента туннеля (Cloud Shell)
+**Клиент Туннеля в Kubernetes:**
 
-Теперь, когда сервер `chisel` запущен на VDS, необходимо запустить клиент на машине с доступом к Kubernetes (в нашем случае, в Cloud Shell), чтобы "пробросить" сервис наружу.
+Клиент `chisel` запускается как под в Kubernetes (см. `kubernetes/chisel-client-deployment.yaml`). Он подключается к серверу Chisel на VDS и дает ему инструкцию `R:8000:marzban-controller.marzban.svc.cluster.local:8443`.
 
-Есть два способа это сделать:
+Эта инструкция в контексте SOCKS5-прокси означает, что трафик, пришедший через прокси, должен быть направлен на сервис `marzban-controller` в кластере. Python-скрипт на VDS как раз и является тем клиентом, который отправляет трафик в SOCKS5-прокси.
 
-**Способ А: Ручной запуск (для отладки)**
-
-Вы можете запустить клиент `chisel` напрямую. Это полезно для быстрой проверки. Убедитесь, что у файла `chisel` есть права на выполнение (`chmod +x chisel`).
-
-```bash
-./chisel client vds1.iri1968.dpdns.org:8443 R:8000:marzban-controller.marzban.svc.cluster.local:8443
-```
-Эта команда подключится к серверу и откроет туннель. Сессия будет активна, пока вы не прервете команду.
-
-**Способ Б: Запуск как сервис (рекомендуется)**
-
-Для постоянной работы туннеля в фоновом режиме мы используем `systemd`.
-
-1.  **Проверьте и исправьте сервисный файл:**
-    Мы уже исправили файл `scripts/marzban-tunnel.service`, чтобы он содержал правильную команду для `chisel`.
-
-2.  **Установите и запустите сервис:**
-    Скопируйте файл в директорию `systemd`, включите автозагрузку и запустите его.
-
-    ```bash
-sudo cp scripts/marzban-tunnel.service /etc/systemd/system/
-sudo systemctl enable marzban-tunnel.service
-sudo systemctl start marzban-tunnel.service
-```
-
-3.  **Проверьте статус сервиса:**
-    ```bash
-sudo systemctl status marzban-tunnel.service
-```
-
-### 7. Проверка развертывания
+### 6. Проверка развертывания
 
 Убедитесь, что все поды в пространстве имен `marzban` запущены и работают. Статус `Running` означает, что все в порядке.
 
@@ -116,7 +95,7 @@ kubectl get pods -n marzban
 
 После успешного развертывания и запуска туннеля, панель управления Marzban будет доступна по адресу:
 
-`https://vds1.DOMAIN.org`
+`https://vds1.iri1968.dpdns.org`
 
 ## Создание первого администратора
 
@@ -134,9 +113,9 @@ kubectl get pods -n marzban -l app=marzban-controller
     Выполните следующую команду, подставив имя вашего пода, а также желаемые `ВАШ_ЛОГИН` и `ВАШ_ПАРОЛЬ`. Флаг `--sudo` делает пользователя суперадминистратором.
 
     ```bash
-echo -e '\n' | kubectl exec -i <ИМЯ_ПОДА> -n marzban -- \
-    env MARZBAN_ADMIN_PASSWORD=\'ВАШ_ПАРОЛЬ\' \
-    marzban-cli admin create --username \'ВАШ_ЛОГИН\' --sudo
+    echo -e '\n' | kubectl exec -i <ИМЯ_ПОДА> -n marzban -- \
+        env MARZBAN_ADMIN_PASSWORD=\'ВАШ_ПАРОЛЬ\' \
+        marzban-cli admin create --username \'ВАШ_ЛОГИН\' --sudo
     ```
 
 После выполнения этой команды вы сможете войти в панель управления с указанными учетными данными.
@@ -146,37 +125,27 @@ echo -e '\n' | kubectl exec -i <ИМЯ_ПОДА> -n marzban -- \
 ```mermaid
 graph TD
     subgraph "Интернет"
-        A[Администратор]
-        U[Пользователь Marzban]
+        A[Пользователь]
     end
 
     subgraph "VDS-сервер (vds1.iri1968.dpdns.org)"
         Nginx[Nginx:443]
-        ChiselServer[Chisel Server:8443]
-    end
-
-    subgraph "Среда Google Cloud Shell"
-        ChiselClient[Chisel Client]
-        Kubectl[kubectl]
+        PythonProxy[Python Script:8000]
+        ChiselServer[Chisel Server SOCKS5:993]
     end
 
     subgraph "Kubernetes Кластер (Minikube)"
+        ChiselClient[Chisel Client]
         Service[Service marzban-controller]
-        Pod[Pod marzban-controller]
-        Container1[Container marzban]
-        Container2[Container socat]
+        Pod[Pod marzban-controller:8443]
     end
 
-    A -- SSH --> VDS-сервер
-    A -- kubectl --> Kubectl
-    U -- HTTPS --> Nginx
-    Nginx -- HTTP --> ChiselServer
+    A -- HTTPS --> Nginx
+    Nginx -- HTTP --> PythonProxy
+    PythonProxy -- SOCKS5 --> ChiselServer
     ChiselServer <--> ChiselClient
     ChiselClient -- Переброс порта --> Service
-    Kubectl -- Управление --> Kubernetes
     Service -- > Pod
-    Pod -- > Container2
-    Container2 -- > Container1
 ```
 
 ## Основные команды управления
