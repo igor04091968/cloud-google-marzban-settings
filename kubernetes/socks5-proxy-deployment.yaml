@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: socks5-proxy
+  namespace: marzban
   labels:
     app: socks5-proxy
 spec:
