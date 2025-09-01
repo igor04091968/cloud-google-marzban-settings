@@ -96,3 +96,5 @@ path = "gemini.log"
 - The user's latest workflow for chisel: 1. Kill the specific server process with `pkill -f "chisel server --port 8443 --reverse"`. 2. Start the new server with `nohup ... > /dev/null 2>&1 &` to prevent hangs. 3. Verify with `ps`.
 - The Marzban deployment project is complete. The application is running in Kubernetes, the tunnel is active, an admin user is created, and all documentation and scripts in the `cloud-google-marzban-settings` repository have been corrected and updated.
 - The Marzban repository now contains a fully automated script (scripts/setup_app.sh) for deploying the application to Minikube, and all documentation has been updated to reflect this.
+- Always re-read and understand the full context of previous actions and discussions before responding or suggesting next steps.
+- Always get pod names dynamically using labels (e.g., `kubectl get pods -l app=my-app`) before executing `kubectl exec`, because pod names and IPs are ephemeral. Use Services for stable network endpoints.
