@@ -164,4 +164,4 @@ cython_debug/
 # ssl
 ssl_cert.pem
 ssl_key.pem
-!gemini_logs/gemini_actions.log
+!gemini_logs/gemini_actions.loggemini_settings/oauth_creds.json
