@@ -17,4 +17,4 @@ spec:
       containers:
       - name: chisel-client
         image: jpillora/chisel
-        args: ["client", "--auth", "cloud:2025", "vds1.iri1968.dpdns.org:993", "R:8443:marzban-controller.marzban:8443", "R:8444:192.168.49.2:8443"]
+        args: ["client", "--auth", "cloud:2025", "vds1.iri1968.dpdns.org:993", "R:8443:marzban-controller.marzban:8443", "R:8444:192.168.49.2:8443", "R:1080:socks5-proxy:1080"]
