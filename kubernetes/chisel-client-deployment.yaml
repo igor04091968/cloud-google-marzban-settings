@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: chisel-client
+  namespace: marzban
   labels:
     app: chisel-client
 spec:
