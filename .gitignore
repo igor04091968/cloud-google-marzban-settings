@@ -165,3 +165,7 @@ cython_debug/
 ssl_cert.pem
 ssl_key.pem
 !gemini_logs/gemini_actions.loggemini_settings/oauth_creds.json
+
+# Ignored SSH keys
+id_rsa_vds1
+id_rsa_vds1.pub
