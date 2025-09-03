@@ -98,3 +98,9 @@ path = "gemini.log"
 - The Marzban repository now contains a fully automated script (scripts/setup_app.sh) for deploying the application to Minikube, and all documentation has been updated to reflect this.
 - Always re-read and understand the full context of previous actions and discussions before responding or suggesting next steps.
 - Always get pod names dynamically using labels (e.g., `kubectl get pods -l app=my-app`) before executing `kubectl exec`, because pod names and IPs are ephemeral. Use Services for stable network endpoints.
+- The chisel server is located at vds1.iri1968.dpdns.org
+- I have permission to check and configure the server vds1.iri1968.dpdns.org myself.
+- The admin password for Marzban is kZrdGNSKMMfBW2Z+oMfWfw==
+- vds1.iri1968.dpdns.org is a dumb proxy with nginx and chisel on board and a Kubernetes controller. No other services should be installed directly on it. All deployments should be within its Kubernetes cluster.
+- chisel-client should be deployed only in Cloud Shell, not using VDS1 for its operation (for now).
+- Correct steps for x-ui deployment and Nginx configuration: 1. Local Docker Compose Setup for x-ui and chisel-client. 2. Nginx Configuration on VDS1 to proxy to chisel reverse tunnel endpoint. 3. Chisel Server on VDS1 running and configured for reverse tunnels. Key learnings from troubleshooting: chisel-client binding issues, Nginx proxy_set_header escaping, x-ui base path expectation.
