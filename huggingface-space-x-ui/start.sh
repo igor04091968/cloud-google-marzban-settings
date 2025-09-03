@@ -1,8 +1,11 @@
 
 #!/bin/bash
 
+# Change to the correct directory
+cd /opt/x-ui/
+
 # Start x-ui in the background
-/opt/x-ui/x-ui/x-ui &
+./x-ui/x-ui &
 
 # Check if auth variables are set
 if [ -z "${CHISEL_AUTH_USER}" ] || [ -z "${CHISEL_AUTH_PASS}" ]; then
