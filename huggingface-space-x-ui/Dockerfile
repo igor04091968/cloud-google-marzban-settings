@@ -26,6 +26,9 @@ RUN LATEST_XUI_URL=$(curl -sL "https://api.github.com/repos/MHSanaei/3x-ui/relea
     rm /tmp/x-ui.tar.gz && \
     chmod +x /opt/x-ui/x-ui/x-ui
 
+# Force rebuild by adding a changing ARG
+ARG CACHE_BUSTER=20250903050820
+
 # Copy the startup script and fix line endings
 COPY start.sh /usr/local/bin/start.sh
 RUN dos2unix /usr/local/bin/start.sh
