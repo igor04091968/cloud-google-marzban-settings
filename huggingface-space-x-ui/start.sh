@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 # Change to the correct directory
