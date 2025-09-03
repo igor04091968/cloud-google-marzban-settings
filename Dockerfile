@@ -1,39 +1,36 @@
-# Use a base image that has Python and a shell (e.g., Ubuntu or Alpine)
-FROM ubuntu:latest
+# Use a lightweight base image
+FROM debian:bullseye-slim
 
-# Install necessary packages
+# Install necessary packages and clean up
 RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
     wget \
-    gzip \
-    netcat \
+    curl \
+    tar \
+    ca-certificates \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
-# Install x-ui dependencies (assuming x-ui is a Python application)
-# You might need to adjust these based on actual x-ui requirements
-RUN pip3 install flask # Example, replace with actual x-ui dependencies
-
-# Download and install chisel
-ARG CHISEL_VERSION=1.10.1
-ARG CHISEL_ARCH=amd64
-RUN wget https://github.com/jpillora/chisel/releases/download/v${CHISEL_VERSION}/chisel_${CHISEL_VERSION}_linux_${CHISEL_ARCH}.gz -O /tmp/chisel.gz && \
+# Install chisel
+ARG CHISEL_VERSION=1.9.1
+RUN wget https://github.com/jpillora/chisel/releases/download/v${CHISEL_VERSION}/chisel_${CHISEL_VERSION}_linux_amd64.gz -O /tmp/chisel.gz && \
     gunzip /tmp/chisel.gz && \
     mv /tmp/chisel /usr/local/bin/chisel && \
     chmod +x /usr/local/bin/chisel
 
-# Copy x-ui application files (assuming x-ui is in the current directory)
-# You'll need to replace this with the actual path to your x-ui files
-COPY . /app/x-ui/
-WORKDIR /app/x-ui/
+# Download and install x-ui
+RUN LATEST_XUI_URL=$(curl -sL "https://api.github.com/repos/MHSanaei/3x-ui/releases/latest" | grep '"browser_download_url":' | grep 'linux-amd64.tar.gz' | sed -E 's/.*"([^"]+)".*/\1/') && \
+    wget -O /tmp/x-ui.tar.gz "${LATEST_XUI_URL}" && \
+    mkdir -p /opt/x-ui && \
+    tar -zxvf /tmp/x-ui.tar.gz -C /opt/x-ui && \
+    rm /tmp/x-ui.tar.gz && \
+    chmod +x /opt/x-ui/x-ui
 
-# Create a startup script
+# Copy the startup script
 COPY start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
 
-# Expose the x-ui port
+# Expose the x-ui port (default is 2053, can be changed in config)
 EXPOSE 2053
 
-# Set the entrypoint to the startup script
+# Set the entrypoint
 ENTRYPOINT ["/usr/local/bin/start.sh"]

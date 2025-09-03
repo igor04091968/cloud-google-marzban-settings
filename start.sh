@@ -1,13 +1,14 @@
 #!/bin/bash
 
-# Start x-ui (adjust command based on how x-ui is started)
-# Example: python3 main.py or a specific x-ui startup command
-# You'll need to replace this with the actual x-ui startup command
-nohup python3 main.py > /var/log/x-ui.log 2>&1 &
+# Start x-ui in the background
+/opt/x-ui/x-ui &
 
-# Start chisel-client
-# Ensure CHISEL_AUTH_USER and CHISEL_AUTH_PASS are set as environment variables in Hugging Face Space
-/usr/local/bin/chisel client -v --auth ${CHISEL_AUTH_USER}:${CHISEL_AUTH_PASS} vds1.iri1968.dpdns.org:80 R:8443:localhost:2053 > /var/log/chisel_client.log 2>&1 &
+# Check if auth variables are set
+if [ -z "${CHISEL_AUTH_USER}" ] || [ -z "${CHISEL_AUTH_PASS}" ]; then
+  echo "Error: CHISEL_AUTH_USER and CHISEL_AUTH_PASS environment variables must be set."
+  exit 1
+fi
 
-# Keep the container running
-tail -f /var/log/x-ui.log /var/log/chisel_client.log
+# Start chisel client in the foreground
+# It connects to your VDS and forwards the remote port 8443 to the local x-ui port 2053
+/usr/local/bin/chisel client -v --auth "${CHISEL_AUTH_USER}:${CHISEL_AUTH_PASS}" vds1.iri1968.dpdns.org:993 R:8443:localhost:2053
