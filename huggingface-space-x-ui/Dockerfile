@@ -3,6 +3,7 @@ FROM debian:bullseye-slim
 
 # Install necessary packages and clean up
 RUN apt-get update && apt-get install -y \
+    dos2unix \
     wget \
     curl \
     tar \
@@ -23,14 +24,15 @@ RUN LATEST_XUI_URL=$(curl -sL "https://api.github.com/repos/MHSanaei/3x-ui/relea
     mkdir -p /opt/x-ui && \
     tar -zxvf /tmp/x-ui.tar.gz -C /opt/x-ui && \
     rm /tmp/x-ui.tar.gz && \
-    chmod +x /opt/x-ui/x-ui
+    chmod +x /opt/x-ui/x-ui/x-ui
 
-# Copy the startup script
+# Copy the startup script and fix line endings
 COPY start.sh /usr/local/bin/start.sh
+RUN dos2unix /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
 
 # Expose the x-ui port (default is 2053, can be changed in config)
 EXPOSE 2053
 
-# Set the entrypoint
-ENTRYPOINT ["/usr/local/bin/start.sh"]
+# Set the entrypoint to execute with bash
+ENTRYPOINT ["/bin/bash", "/usr/local/bin/start.sh"]
