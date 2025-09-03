@@ -20,6 +20,18 @@ spec:
         image: ghcr.io/mhsanaei/3x-ui
         ports:
         - containerPort: 2053
+        readinessProbe:
+          httpGet:
+            path: /x-ui/
+            port: 2053
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        livenessProbe:
+          httpGet:
+            path: /x-ui/
+            port: 2053
+          initialDelaySeconds: 30
+          periodSeconds: 30
         volumeMounts:
         - name: xui-data
           mountPath: /etc/x-ui

@@ -3,11 +3,7 @@
 # This script automates the setup of a Hugging Face Space for 3x-ui with a chisel tunnel.
 
 # --- User Input ---
-read -p "Enter your Hugging Face username: " HF_USERNAME
-if [ -z "$HF_USERNAME" ]; then
-    echo "Username cannot be empty."
-    exit 1
-fi
+HF_USERNAME="rachkovii68"
 
 read -p "Enter the name of your new Hugging Face Space: " HF_SPACENAME
 if [ -z "$HF_SPACENAME" ]; then
@@ -69,9 +65,9 @@ sleep 5
 echo "Starting chisel client tunnel..."
 
 # These variables must be set as "Secrets" in your Hugging Face Space settings
-# Example: CHISEL_SERVER_URL = vds1.iri1968.dpdns.org:993
+# Example: CHISEL_SERVER_URL = vds1.iri1968.dpdns.org:443
 #          CHISEL_AUTH = cloud:2025
-/usr/local/bin/chisel client -v --auth "$CHISEL_AUTH" "$CHISEL_SERVER_URL" R:8443:localhost:2053
+/usr/local/bin/chisel client -v --auth "$CHISEL_AUTH" "$CHISEL_SERVER_URL" R:443:localhost:2053
 EOF
 
 # --- Git Push ---
@@ -102,5 +98,11 @@ echo ""
 echo "2. Name: CHISEL_SERVER_URL"
 echo "   Value: vds1.iri1968.dpdns.org:993"
 echo ""
-echo "After the build is complete and secrets are set, your x-ui panel should be available at https://vds1.iri1968.dpdns.org:8443"
+echo "3. Name: XUI_USERNAME"
+echo "   Value: admin"
+echo ""
+echo "4. Name: XUI_PASSWORD"
+echo "   Value: BujhmBdfyjdb$"
+echo ""
+echo "After the build is complete and secrets are set, your x-ui panel should be available at https://vds1.iri1968.dpdns.org"
 echo ""
