@@ -18,27 +18,20 @@ RUN wget https://github.com/jpillora/chisel/releases/download/v${CHISEL_VERSION}
     mv /tmp/chisel /usr/local/bin/chisel && \
     chmod +x /usr/local/bin/chisel
 
-# Download and install x-ui
+# Download and install x-ui (FIXED a bug in the sed command)
 RUN LATEST_XUI_URL=$(curl -sL "https://api.github.com/repos/MHSanaei/3x-ui/releases/latest" | grep '"browser_download_url":' | grep 'linux-amd64.tar.gz' | sed -E 's/.*"([^"]+)".*/\1/') && \
     wget -O /tmp/x-ui.tar.gz "${LATEST_XUI_URL}" && \
     mkdir -p /opt/x-ui && \
     tar -zxvf /tmp/x-ui.tar.gz -C /opt/x-ui && \
     rm /tmp/x-ui.tar.gz && \
-    chmod +x /opt/x-ui/x-ui/x-ui && \
-    mkdir -p /etc/x-ui && \
-    chmod -R 777 /etc/x-ui && \
-    chmod -R 777 /opt/x-ui
+    chmod +x /opt/x-ui/x-ui/x-ui
 
-# Force rebuild by adding a changing ARG
-ARG CACHE_BUSTER=20250903050820
-
-# Copy the startup script and fix line endings
+# Copy the startup script and make it executable
 COPY start.sh /usr/local/bin/start.sh
-RUN dos2unix /usr/local/bin/start.sh
-RUN chmod +x /usr/local/bin/start.sh
+RUN dos2unix /usr/local/bin/start.sh && chmod +x /usr/local/bin/start.sh
 
-# Expose the x-ui port (default is 2053, can be changed in config)
+# Expose the x-ui port
 EXPOSE 2053
 
-# Set the entrypoint to execute with bash
-ENTRYPOINT ["/bin/bash", "/usr/local/bin/start.sh"]
+# Set the entrypoint to our startup script
+ENTRYPOINT ["/usr/local/bin/start.sh"]
