@@ -26,7 +26,8 @@ RUN LATEST_XUI_URL=$(curl -sL "https://api.github.com/repos/MHSanaei/3x-ui/relea
     rm /tmp/x-ui.tar.gz && \
     chmod +x /opt/x-ui/x-ui/x-ui && \
     mkdir -p /etc/x-ui && \
-    chmod -R 777 /etc/x-ui
+    chmod -R 777 /etc/x-ui && \
+    chmod -R 777 /opt/x-ui
 
 # Force rebuild by adding a changing ARG
 ARG CACHE_BUSTER=20250903050820
