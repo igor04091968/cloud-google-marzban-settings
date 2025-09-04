@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Start 3x-ui in the background
+/usr/local/x-ui/x-ui &
+
+# Sleep for a few seconds to ensure 3x-ui has started
+sleep 5
+
+# Start chisel client
+# Replace with your actual server details and authentication
+chisel client --auth "cloud:2025" vds1.iri1968.dpdns.org:8443 R:8000:127.0.0.1:62789
