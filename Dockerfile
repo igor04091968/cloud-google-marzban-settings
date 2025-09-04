@@ -1,31 +1,70 @@
-ARG PYTHON_VERSION=3.12
+FROM debian:bullseye-slim
 
-FROM python:$PYTHON_VERSION-slim AS build
+# Install necessary packages and clean up
+RUN apt-get update && apt-get install -y \
+    dos2unix \
+    wget \
+    curl \
+    tar \
+    bash \
+    ca-certificates \
+    --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
 
-ENV PYTHONUNBUFFERED=1
+SHELL ["/bin/bash", "-c"]
 
-WORKDIR /code
+# Install chisel
+ARG CHISEL_VERSION=1.10.1
+RUN wget https://github.com/jpillora/chisel/releases/download/v${CHISEL_VERSION}/chisel_${CHISEL_VERSION}_linux_amd64.gz -O /tmp/chisel.gz && \
+    gunzip /tmp/chisel.gz && \
+    mv /tmp/chisel /usr/local/bin/chisel && \
+    chmod +x /usr/local/bin/chisel
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential curl unzip gcc python3-dev libpq-dev \
-    && curl -L https://github.com/Gozargah/Marzban-scripts/raw/master/install_latest_xray.sh | bash \
-    && rm -rf /var/lib/apt/lists/*
+# Download and extract 3x-ui
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then ARCH="amd64"; fi && \
+    if [ "$ARCH" = "aarch64" ]; then ARCH="arm64"; fi && \
+    wget -O /usr/local/x-ui-linux-${ARCH}.tar.gz \
+    "https://github.com/MHSanaei/3x-ui/releases/latest/download/x-ui-linux-${ARCH}.tar.gz" && \
+    mkdir -p /usr/local/x-ui/ && \
+    tar -zxvf /usr/local/x-ui-linux-*.tar.gz -C /usr/local/x-ui/ --strip-components=1 && \
+    rm /usr/local/x-ui-linux-*.tar.gz && \
+    chmod +x /usr/local/x-ui/x-ui && \
+    cp /usr/local/x-ui/x-ui.sh /usr/bin/x-ui
 
-COPY ./requirements.txt /code/
-RUN python3 -m pip install --upgrade pip setuptools \
-    && pip install --no-cache-dir --upgrade -r /code/requirements.txt
+# Create the startup script to run both x-ui and chisel client
+RUN cat <<'EOF' > /usr/local/bin/start.sh
+#!/bin/bash
 
-FROM python:$PYTHON_VERSION-slim
+# Set a writable directory for the x-ui database
+export XUI_DB_FOLDER=/tmp
 
-ENV PYTHON_LIB_PATH=/usr/local/lib/python${PYTHON_VERSION%.*}/site-packages
-WORKDIR /code
+# Function to run chisel client in a loop
+run_chisel() {
+  while true; do
+    echo "Starting chisel client..."
+    /usr/local/bin/chisel client -v --auth "cloud:2025" vds1.iri1968.dpdns.org:80 R:8443:localhost:2053
+    echo "Chisel client exited. Restarting in 5 seconds..."
+    sleep 5
+  done
+}
 
-RUN rm -rf $PYTHON_LIB_PATH/*
+# Start chisel in the background
+run_chisel &
 
-COPY --from=build $PYTHON_LIB_PATH $PYTHON_LIB_PATH
-COPY --from=build /usr/local/bin /usr/local/bin
-COPY --from=build /usr/local/share/xray /usr/local/share/xray
+# Set webBasePath
+/usr/local/x-ui/x-ui setting -webBasePath /
 
-COPY . /code
+# Start x-ui in the foreground
+cd /usr/local/x-ui
+./x-ui
+EOF
 
-CMD ["bash", "-c", "python main.py"]
+# Make the script executable
+RUN chmod +x /usr/local/bin/start.sh
+
+# Expose the x-ui port
+EXPOSE 2053
+
+# Set the entrypoint to our startup script
+ENTRYPOINT ["/bin/bash", "-c", "/usr/local/bin/start.sh"]
