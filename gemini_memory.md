@@ -6,6 +6,19 @@ This document summarizes key facts and learnings that the Gemini Assistant has s
 
 *   **vds1.iri1968.dpdns.org:** This server is a "dumb proxy" with Nginx and Chisel on board, and it acts as a Kubernetes controller. No other services should be installed directly on it. All deployments should occur within its Kubernetes cluster.
 
+## Project: AI Admin Assistant Deployment (In Progress)
+
+*   **Goal:** Setup, run, debug, and deploy the `ai-admin-assistant` application to the Hugging Face Space `igor04091968/ai-admin-assistant`.
+*   **Local Setup:** The application files are in `/home/rachkovii68/huggingface_ai_admin/`.
+*   **Progress:**
+    1.  Successfully built the Docker image `ai-admin-assistant`.
+    2.  Successfully ran the container locally, accessible at `http://localhost:7860`.
+    3.  Attempted to upload to Hugging Face Space.
+*   **Blocking Issue:** All upload attempts (`git push`, `huggingface-cli upload`) failed with a `401 Unauthorized` error. This indicates that the command-line environment is not authenticated with Hugging Face.
+*   **Current Status & Next Step:** Waiting for the user to perform command-line login to Hugging Face.
+    *   **Action for User:** Run the command `/home/rachkovii68/.local/bin/huggingface-cli login` and provide a User Access Token with `write` permissions.
+    *   **Next Action for Gemini:** After user confirmation, retry the upload using `huggingface-cli upload`.
+
 ## Project-Specific Learnings: x-ui Deployment
 
 ### Correct Deployment Steps
@@ -15,7 +28,7 @@ This document summarizes key facts and learnings that the Gemini Assistant has s
     *   `chisel-client` runs locally in Cloud Shell via Docker Compose, connecting to the Chisel server on VDS1 to establish a reverse tunnel.
     *   **`docker-compose.yaml` configuration:**
         ```yaml
-        version: '3.3'
+        version: '''3.3'''
 
         services:
           x-ui:
@@ -77,7 +90,7 @@ This document summarizes key facts and learnings that the Gemini Assistant has s
 *   **`chisel-client` `Restarting (1)` Issues:**
     *   Initial errors like "Client cannot listen on L:..." were due to local port conflicts or binding issues.
     *   "A server and least one remote is required" occurred when the `chisel` client command was too simple (lacked a remote specification).
-    *   "Failed to decode remote '-v'" was caused by incorrect positioning of the `-v` (verbose) flag in the `chisel` client command.
+    *   "Failed to decode remote '-v''" was caused by incorrect positioning of the `-v` (verbose) flag in the `chisel` client command.
     *   "error dial tcp 127.0.0.1:2053: connect: connection refused" from `chisel-client` to `x-ui` was resolved by using the Docker service name (`x-ui:2053`) instead of `127.0.0.1` or `localhost` for inter-container communication within the Docker Compose network.
 
 *   **Nginx "502 Bad Gateway" Issues:**
