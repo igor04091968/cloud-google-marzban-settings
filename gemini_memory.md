@@ -10,14 +10,21 @@ This document summarizes key facts and learnings that the Gemini Assistant has s
 
 *   **Goal:** Setup, run, debug, and deploy the `ai-admin-assistant` application to the Hugging Face Space `igor04091968/ai-admin-assistant`.
 *   **Local Setup:** The application files are in `/home/rachkovii68/huggingface_ai_admin/`.
-*   **Progress:**
-    1.  Successfully built the Docker image `ai-admin-assistant`.
-    2.  Successfully ran the container locally, accessible at `http://localhost:7860`.
-    3.  Attempted to upload to Hugging Face Space.
-*   **Blocking Issue:** All upload attempts (`git push`, `huggingface-cli upload`) failed with a `401 Unauthorized` error. This indicates that the command-line environment is not authenticated with Hugging Face.
-*   **Current Status & Next Step:** Waiting for the user to perform command-line login to Hugging Face.
-    *   **Action for User:** Run the command `/home/rachkovii68/.local/bin/huggingface-cli login` and provide a User Access Token with `write` permissions.
-    *   **Next Action for Gemini:** After user confirmation, retry the upload using `huggingface-cli upload`.
+*   **Blocking Issue (Resolved):** Application failed on Hugging Face due to health check errors (`405 Method Not Allowed`).
+*   **Fix Implemented:** Wrapped the Gradio app in a FastAPI application to provide a dedicated health check endpoint. Updated `app.py` and `requirements.txt` accordingly.
+*   **Current Status & Next Step:** The code has been corrected. The next action is to upload the updated application to the Hugging Face Space and verify the fix. The user still needs to ensure they are authenticated with `huggingface-cli` before uploading.
+
+### Troubleshooting: Gradio Health Check on Hugging Face
+
+*   **Problem:** The application container on Hugging Face Spaces was crashing. Logs showed a `405 Method Not Allowed` error for `POST` requests to the root URL.
+*   **Cause:** The Hugging Face platform uses health checks that can send `POST` requests to the application's root (`/`). A standard Gradio application does not have a handler for `POST` at the root, causing it to fail.
+*   **Solution:**
+    1.  Wrap the Gradio application in a FastAPI application.
+    2.  Create a specific health check endpoint at `@app.get("/")` that returns a simple success response (e.g., `{"status": "ok"}`).
+    3.  Mount the Gradio app onto the FastAPI app using `gr.mount_gradio_app(app, demo, path="/")`. The Hugging Face infrastructure runs the resulting `app` object.
+    4.  Add `fastapi` and `uvicorn` to `requirements.txt` to ensure the necessary dependencies are installed.
+    5.  The `if __name__ == "__main__"` block was updated to use `uvicorn.run(app, ...)` for a local execution environment that better mimics the production one.
+
 
 ## Project-Specific Learnings: x-ui Deployment
 
