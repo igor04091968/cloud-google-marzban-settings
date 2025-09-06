@@ -169,3 +169,4 @@ ssl_key.pem
 # Ignored SSH keys
 id_rsa_vds1
 id_rsa_vds1.pub
+id_rsa_tunnel
