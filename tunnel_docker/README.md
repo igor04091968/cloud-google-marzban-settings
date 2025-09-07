@@ -23,8 +23,18 @@ A convenience script `install_tunnel.sh` is provided in the `scripts/` directory
 
 ---
 
+## Container Services and Tunneling
 
-## Primary Services Exposed via SSH Tunnel
+This container establishes a persistent tunnel to a remote server (`vds1.iri1968.dpdns.org`). All outgoing traffic from this container is routed through the Cloudflare WARP network.
+
+### Services running inside the container:
+
+- **SSH Server:** Listens on port `22` (for internal container access).
+- **iperf3 Server:** Listens on port `8088` (for speed tests).
+- **Tinyproxy (HTTP Proxy):** Listens on port `8888`. This proxy uses an upstream SOCKS5 proxy provided by `chisel client`.
+- **Chisel Client:** Connects to `vds1` and establishes a SOCKS5 proxy locally within the container (default `localhost:1080`).
+
+### Exposed Services on `vds1` (via main SSH tunnel):
 
 When this container is running, the following services are exposed on the remote VDS (`vds1.iri1968.dpdns.org`) via the main **SSH tunnel**:
 
@@ -60,7 +70,7 @@ sudo docker run -d --restart=unless-stopped --name tunnel_cloud_instance \
 
 ## Usage Examples
 
-### Speed Test
+### Speed Test (via main SSH tunnel)
 
 Test the main SSH tunnel speed at any time by logging into your VDS and running:
 
@@ -68,9 +78,9 @@ Test the main SSH tunnel speed at any time by logging into your VDS and running:
 iperf3 -c localhost -p 8088
 ```
 
-### HTTP Proxy via Chisel
+### HTTP Proxy via Chisel (for laptop traffic)
 
-The HTTP proxy (`tinyproxy`) inside the container listens on port `8888`. To access it, you need to use the `chisel client` on the VDS to create a tunnel from the VDS to the proxy inside the container.
+The HTTP proxy (`tinyproxy`) inside the container listens on port `8888`. To access it from your laptop, you need to use the `chisel client` on the VDS to create a tunnel from the VDS to the proxy inside the container.
 
 **This command must be run on the VDS:**
 
@@ -83,5 +93,14 @@ chisel client localhost:9001 R:8888:localhost:8888
 
 Once the chisel client is running, you can use the HTTP proxy on `vds1` at `localhost:8888`.
 
-```
+**To route your laptop's traffic through this proxy:**
 
+1.  **Create a local tunnel from your laptop to `vds1`:**
+    ```bash
+    ssh -L 8888:localhost:8888 root@vds1.iri1968.dpdns.org
+    ```
+    This will make the HTTP proxy available on `localhost:8888` on your laptop.
+2.  **Configure your laptop's browser/system proxy settings:**
+    *   **Type:** HTTP
+    *   **Address:** `127.0.0.1` (or `localhost`)
+    *   **Port:** `8888`
