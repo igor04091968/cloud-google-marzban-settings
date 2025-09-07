@@ -28,8 +28,12 @@ sudo docker stop tunnel_client || true
 sudo docker rm tunnel_client || true
 
 # Run the new container
+# IMPORTANT: This container requires elevated privileges to manage network settings for WARP.
 # IMPORTANT: Replace /path/to/your/key with the actual path to your id_rsa_vds1 file
-sudo docker run -d --restart=unless-stopped --name tunnel_client -v /path/to/your/key/id_rsa_vds1:/root/.ssh/id_rsa_vds1:ro tunnel_iperf
+sudo docker run -d --restart=unless-stopped --name tunnel_client \
+    --cap-add=NET_ADMIN --cap-add=SYS_ADMIN \
+    -v /path/to/your/key/id_rsa_vds1:/root/.ssh/id_rsa_vds1:ro \
+    tunnel_iperf
 ```
 
 ## Usage Example: Speed Test
