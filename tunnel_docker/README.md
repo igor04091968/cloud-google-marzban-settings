@@ -31,7 +31,7 @@ This container establishes a persistent tunnel to a remote server (`vds1.iri1968
 
 - **SSH Server:** Listens on port `22` (for internal container access).
 - **iperf3 Server:** Listens on port `8088` (for speed tests).
-- **Tinyproxy (HTTP Proxy):** Listens on port `8888`. This proxy uses an upstream SOCKS5 proxy provided by `chisel client`.
+- **Privoxy (HTTP Proxy):** Listens on port `8888`. This proxy uses an upstream SOCKS5 proxy provided by `chisel client`.
 - **Chisel Client:** Connects to `vds1` (on port `21`) and establishes a SOCKS5 proxy locally within the container (default `localhost:1080`).
 
 ### Exposed Services on `vds1` (via main SSH tunnel):
@@ -79,7 +79,7 @@ iperf3 -c localhost -p 8088
 
 ### HTTP Proxy (for laptop traffic)
 
-The HTTP proxy (`tinyproxy`) inside the container listens on port `8888`. To access it from your laptop, you need to use the `chisel client` on the VDS to create a tunnel from the VDS to the proxy inside the container.
+The HTTP proxy (`Privoxy`) inside the container listens on port `8888`. To access it from your laptop, you need to use the `chisel client` on the VDS to create a tunnel from the VDS to the proxy inside the container.
 
 **This command must be run on the VDS:**
 
