@@ -29,10 +29,10 @@ sudo docker rm tunnel_client || true
 
 # Run the new container
 # IMPORTANT: This container requires elevated privileges to manage network settings for WARP.
-# IMPORTANT: Replace /path/to/your/key with the actual path to your id_rsa_vds1 file
+# The command assumes the private key 'id_rsa_vds1' is located in /root/.ssh/ on the host machine.
 sudo docker run -d --restart=unless-stopped --name tunnel_client \
     --cap-add=NET_ADMIN --cap-add=SYS_ADMIN \
-    -v /path/to/your/key/id_rsa_vds1:/root/.ssh/id_rsa_vds1:ro \
+    -v /root/.ssh/id_rsa_vds1:/root/.ssh/id_rsa_vds1:ro \
     tunnel_iperf
 ```
 
