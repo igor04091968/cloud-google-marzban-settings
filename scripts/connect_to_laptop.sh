@@ -26,5 +26,5 @@ ssh-agent bash -c " \
     ssh-add '$VDS1_KEY'; \
     ssh-add '$LAPTOP_TUNNEL_KEY'; \
     ssh -A -o StrictHostKeyChecking=no root@vds1.iri1968.dpdns.org \
-        'ssh -p 2222 -o StrictHostKeyChecking=no -t igor@localhost "$REMOTE_COMMAND"' \
+        ssh -p 2222 -o StrictHostKeyChecking=no -t igor@localhost "$REMOTE_COMMAND" \
 "
