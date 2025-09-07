@@ -1,8 +1,28 @@
 # Reverse Tunnel Docker Container with Chisel, iperf3, and WARP
 
-This container establishes a persistent reverse SSH tunnel to a remote server, wrapping the connection in stunnel for obfuscation. All outgoing traffic from this container is routed through the Cloudflare WARP network.
+## Automated Installation
 
-It includes an `iperf3` server for bandwidth testing and a `chisel` server to bypass restrictive SSH server configurations for port forwarding.
+A convenience script `install_tunnel.sh` is provided in the `scripts/` directory of this repository to automate the setup of this container.
+
+**Usage:**
+
+1.  **Clone the repository** (if you haven't already):
+    ```bash
+    git clone https://github.com/igor04091968/cloud-google-marzban-settings.git
+    ```
+2.  **Navigate to the repository root:**
+    ```bash
+    cd cloud-google-marzban-settings
+    ```
+3.  **Ensure your `id_rsa_vds1` private key is in `~/.ssh/`** on the machine where you are running the script.
+4.  **Run the installer script:**
+    ```bash
+    sudo scripts/install_tunnel.sh
+    ```
+    The script will check for Docker and Git, clone/update the repository, build the Docker image, and run the container. It will prompt you if Docker is not installed or if your user is not in the `docker` group.
+
+---
+
 
 ## Primary Services Exposed via SSH Tunnel
 
@@ -64,3 +84,4 @@ chisel client localhost:9001 R:8888:localhost:8888
 Once the chisel client is running, you can use the HTTP proxy on `vds1` at `localhost:8888`.
 
 ```
+
