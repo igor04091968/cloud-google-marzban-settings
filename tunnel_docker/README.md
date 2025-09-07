@@ -7,7 +7,7 @@ This container establishes a persistent reverse SSH tunnel to a remote server, w
 When this container is running, the following services become available on the remote VDS (`vds1.iri1968.dpdns.org`):
 
 - **Reverse SSH Access:** `localhost:2222` on the VDS is tunneled to the container's internal SSH server.
-- **HTTP Proxy:** `localhost:8888` on the VDS acts as an HTTP proxy into the container's network (which is routed through Cloudflare WARP).
+- **HTTP Proxy:** `localhost:19999` on the VDS acts as an HTTP proxy into the container's network (which is routed through Cloudflare WARP).
 - **iperf3 Server:** `localhost:8088` on the VDS is tunneled to the container's internal `iperf3` server for speed tests.
 
 ## Build
