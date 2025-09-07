@@ -32,7 +32,7 @@ This container establishes a persistent tunnel to a remote server (`vds1.iri1968
 - **SSH Server:** Listens on port `22` (for internal container access).
 - **iperf3 Server:** Listens on port `8088` (for speed tests).
 - **Tinyproxy (HTTP Proxy):** Listens on port `8888`. This proxy uses an upstream SOCKS5 proxy provided by `chisel client`.
-- **Chisel Client:** Connects to `vds1` and establishes a SOCKS5 proxy locally within the container (default `localhost:1080`).
+- **Chisel Client:** Connects to `vds1` (on port `21`) and establishes a SOCKS5 proxy locally within the container (default `localhost:1080`).
 
 ### Exposed Services on `vds1` (via main SSH tunnel):
 
@@ -40,7 +40,6 @@ When this container is running, the following services are exposed on the remote
 
 - **Reverse SSH Access:** `localhost:2222` on the VDS is tunneled to the container's internal SSH server.
 - **iperf3 Server:** `localhost:8088` on the VDS is tunneled to the container's internal `iperf3` server.
-- **Chisel Server:** `localhost:9001` on the VDS is tunneled to the container's internal `chisel` server. This is the entry point for creating more flexible sub-tunnels.
 
 ## Build
 
@@ -78,7 +77,7 @@ Test the main SSH tunnel speed at any time by logging into your VDS and running:
 iperf3 -c localhost -p 8088
 ```
 
-### HTTP Proxy via Chisel (for laptop traffic)
+### HTTP Proxy (for laptop traffic)
 
 The HTTP proxy (`tinyproxy`) inside the container listens on port `8888`. To access it from your laptop, you need to use the `chisel client` on the VDS to create a tunnel from the VDS to the proxy inside the container.
 
@@ -87,7 +86,7 @@ The HTTP proxy (`tinyproxy`) inside the container listens on port `8888`. To acc
 ```bash
 # This command connects to the chisel server (exposed on vds1:9001 via the SSH tunnel)
 # and creates a new tunnel: vds1:8888 -> container:8888
-chisel client localhost:9001 R:8888:localhost:8888
+chisel client localhost:21 8888:localhost:8888
 ```
 *Note: This `chisel client` command will run in the foreground. You may want to run it in a `screen` or `tmux` session to keep it alive.*
 
