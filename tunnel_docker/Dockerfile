@@ -7,8 +7,7 @@ RUN apk add --no-cache stunnel openssh iperf3
 RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh && ssh-keygen -A
 
 # Copy configs
-COPY tunnel_docker/config/stunnel.conf /etc/stunnel/stunnel.conf
-COPY tunnel_docker/config/sshd_config /etc/ssh/sshd_config
+
 
 # Copy entrypoint and make it executable
 COPY tunnel_docker/entrypoint.sh /entrypoint.sh
