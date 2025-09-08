@@ -6,7 +6,7 @@ emoji: 🚀
 colorFrom: gray
 colorTo: indigo
 pinned: true
-app_port: 2053
+app_port: 2222
 persistent_storage: true
 ---
 
