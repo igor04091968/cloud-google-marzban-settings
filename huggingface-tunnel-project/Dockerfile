@@ -1,8 +1,8 @@
 # Base image
 FROM alpine:latest
 
-# Install packages
-RUN apk add --no-cache stunnel openssh iperf3
+# Install packages, including su-exec for privilege dropping
+RUN apk add --no-cache stunnel openssh iperf3 su-exec
 
 # Create a non-root user with UID 1000
 RUN addgroup -g 1000 user && adduser -u 1000 -G user -h /home/user -s /bin/sh -D user
@@ -17,15 +17,17 @@ RUN mkdir -p /home/user/.ssh && \
 COPY stunnel.conf /etc/stunnel/stunnel.conf
 COPY sshd_config /etc/ssh/sshd_config
 
-# Copy entrypoint and make it executable
+# Copy entrypoint scripts and make them executable
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /entrypoint.sh /docker-entrypoint.sh
 
-# Switch to the new user
-USER user
+# NOTE: We do NOT switch user here. The wrapper script will run as root.
+# USER user
 WORKDIR /home/user
 
 # Expose the port that will be mapped by Hugging Face
 EXPOSE 2222
 
-ENTRYPOINT ["/entrypoint.sh"]
+# The wrapper script is the main entrypoint
+ENTRYPOINT ["/docker-entrypoint.sh"]

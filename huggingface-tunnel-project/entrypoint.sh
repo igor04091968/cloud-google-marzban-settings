@@ -1,15 +1,5 @@
 #!/bin/sh
 
-# 0. Generate SSH host keys
-# This needs to be run as root, so we use sudo. First, we need to ensure sudo is installed.
-# The Dockerfile should be modified to install sudo and configure sudoers.
-# For now, we assume this script is run with enough permissions or sudo is configured.
-
-# A better approach is to handle this in the Dockerfile if possible, 
-# but runtime generation ensures keys are always present.
-# We will attempt to run it directly. If it fails, we'll need to adjust the Dockerfile.
-/usr/bin/ssh-keygen -A
-
 # 1. Create private key from secret in the user's home directory
 if [ -z "$ID_RSA_VDS1" ]; then
   echo "Error: ID_RSA_VDS1 secret is not set."
