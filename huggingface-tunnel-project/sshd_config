@@ -1,4 +1,4 @@
 Port 22
 PermitRootLogin yes
 PubkeyAuthentication yes
-AuthorizedKeysFile /root/.ssh/authorized_keys
+AuthorizedKeysFile /home/user/.ssh/authorized_keys
