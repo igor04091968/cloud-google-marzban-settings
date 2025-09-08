@@ -41,7 +41,7 @@ The connection is established in a "reverse" direction, from the inside (**cs**)
 
 ```mermaid
 graph TD
-    subgraph "Cloud Shell (cs)"
+    subgraph "Cloud Shell (cs) / Hugging Face Space"
         A[Container: tunnel-container]
     end
 
@@ -66,3 +66,12 @@ graph TD
     *   Any traffic sent to `localhost:2222` on **vds1** is forwarded to the container's SSH server on port 22.
 
 This architecture effectively makes services running inside the sandboxed **cs** container accessible from the public **vds1** server.
+
+## 5. Hugging Face Deployment
+
+To deploy this container on a Hugging Face Space, you must configure one **Space Secret**:
+
+*   **Name**: `ID_RSA_VDS1`
+*   **Value**: The entire content of your private SSH key file (`id_rsa_vds1`), including the `-----BEGIN OPENSSH PRIVATE KEY-----` and `-----END OPENSSH PRIVATE KEY-----` lines.
+
+The `entrypoint.sh` script will read this secret and create the necessary key file for the SSH connection to work.

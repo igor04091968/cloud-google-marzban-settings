@@ -1,6 +1,13 @@
 #!/bin/sh
 
-# 1. Start the container's SSH server
+# 1. Create private key from secret
+if [ -z "$ID_RSA_VDS1" ]; then
+  echo "Error: ID_RSA_VDS1 secret is not set."
+  exit 1
+fi
+echo "$ID_RSA_VDS1" > /root/.ssh/id_rsa_vds1
+
+# 2. Start the container's SSH server
 /usr/sbin/sshd
 
 # 2. Start stunnel client
