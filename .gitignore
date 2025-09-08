@@ -170,3 +170,7 @@ ssl_key.pem
 id_rsa_vds1
 id_rsa_vds1.pub
 id_rsa_tunnel
+
+# Explicitly un-ignore Hugging Face config files
+!huggingface-tunnel-project/stunnel.conf
+!huggingface-tunnel-project/sshd_config
