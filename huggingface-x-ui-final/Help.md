@@ -203,7 +203,7 @@ emoji: 🚀
 colorFrom: gray
 colorTo: indigo
 pinned: true
-app_port: 8000 # This is the port that Chisel reverse tunnels to on the client side
+app_port: 2023 # This is the port that x-ui is listening on inside the Docker container
 persistent_storage: true
 ---
 # x-ui Tunnel
