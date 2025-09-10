@@ -28,7 +28,7 @@ server {
 
     location / {
         # Проксирование к Chisel серверу, работающему на порту 80
-        proxy_pass http://127.0.0.1:80; # Chisel сервер слушает на порту 80
+        proxy_pass http://127.0.0.1:2023; # Chisel сервер слушает на порту 2023
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -71,7 +71,7 @@ chmod +x /usr/local/bin/chisel
 # Флаг --reverse важен для обратных туннелей.
 # Для mTLS серверу необходимо верифицировать сертификат клиента.
 # Предполагается, что client.crt, client.key, ca.crt присутствуют на VDS1.
-nohup /usr/local/bin/chisel server --port 80 --reverse --tls-cert /home/igor04091968/client.crt --tls-key /home/igor04091968/client.key --tls-ca /home/igor04091968/ca.crt > /dev/null 2>&1 &
+nohup /usr/local/bin/chisel server --port 2023 --reverse --tls-cert /home/igor04091968/client.crt --tls-key /home/igor04091968/client.key --tls-ca /home/igor04091968/ca.crt > /dev/null 2>&1 &
 ```
 
 ## 2. Настройка Hugging Face Space
@@ -149,7 +149,7 @@ export XUI_DB_FOLDER=/tmp
 run_chisel() {
   while true; do
     echo "Starting chisel client with mTLS..."
-    /usr/local/bin/chisel client -v --auth "cloud:2025" --tls-cert /etc/chisel/client.crt --tls-key /etc/chisel/client.key --tls-ca /etc/chisel/ca.crt https://vds1.iri1968.dpdns.org R:8000:127.0.0.1:2023
+    /usr/local/bin/chisel client -v --auth "cloud:2025" --tls-cert /etc/chisel/client.crt --tls-key /etc/chisel/client.key --tls-ca /etc/chisel/ca.crt https://vds1.iri1968.dpdns.org R:2023:127.0.0.1:2023
     echo "Chisel client exited. Restarting in 5 seconds..."
     sleep 5
   ne
