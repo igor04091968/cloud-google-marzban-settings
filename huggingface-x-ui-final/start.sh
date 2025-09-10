@@ -3,14 +3,11 @@
 # Set a writable directory for the x-ui database
 export XUI_DB_FOLDER=/tmp
 
-# Start socat proxy
-socat TCP-LISTEN:9000,fork,reuseaddr TCP:vds1.iri1968.dpdns.org:443 &
-
 # Function to run chisel client in a loop
 run_chisel() {
   while true; do
-    echo "Starting chisel client..."
-    /usr/local/bin/chisel client -v --auth "cloud:2025" --proxy http://127.0.0.1:9000 wss://vds1.iri1968.dpdns.org R:2023:127.0.0.1:2023
+    echo "Starting chisel client with mTLS..."
+    /usr/local/bin/chisel client -v --auth "cloud:2025" --tls-cert /etc/chisel/client.crt --tls-key /etc/chisel/client.key --tls-ca /etc/chisel/ca.crt wss://vds1.iri1968.dpdns.org R:2023:127.0.0.1:2023
     echo "Chisel client exited. Restarting in 5 seconds..."
     sleep 5
   done
