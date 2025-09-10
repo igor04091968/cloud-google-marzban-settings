@@ -1,7 +1,7 @@
 FROM debian:bullseye-slim
 
 # Install necessary packages and clean up
-RUN apt-get update && apt-get install -y     dos2unix     wget     curl     tar     bash     ca-certificates     --no-install-recommends &&     rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y     dos2unix     wget     curl     tar     bash     ca-certificates     socat     --no-install-recommends &&     rm -rf /var/lib/apt/lists/*
 
 SHELL ["/bin/bash", "-c"]
 
@@ -19,7 +19,7 @@ COPY start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
 
 # Expose the x-ui port
-EXPOSE 2053
+EXPOSE 2023
 
 # Set the entrypoint to our startup script
 RUN chmod -R 777 /usr/local/x-ui/
