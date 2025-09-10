@@ -20,23 +20,33 @@ sudo systemctl start nginx
 ```nginx
 server {
     listen 80;
+    server_name vds1.iri1968.dpdns.org; # Замените на ваш домен
+
+    # Перенаправление HTTP на HTTPS
+    return 301 https://$host$request_uri;
+
+    # Certbot challenge
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+}
+
+server {
     listen 443 ssl;
     server_name vds1.iri1968.dpdns.org; # Замените на ваш домен
 
     ssl_certificate /etc/letsencrypt/live/vds1.iri1968.dpdns.org/fullchain.pem; # Укажите правильный путь
     ssl_certificate_key /etc/letsencrypt/live/vds1.iri1968.dpdns.org/privkey.pem; # Укажите правильный путь
 
+    # Certbot challenge
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    # Расположение по умолчанию - Nginx только для Certbot.
+    # Здесь не должно быть проксирования к Chisel.
     location / {
-        # Проксирование к Chisel серверу, работающему на порту 80
-        proxy_pass http://127.0.0.1:2023; # Chisel сервер слушает на порту 2023
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_redirect off;
+        try_files $uri $uri/ =404;
     }
 }
 ```
@@ -71,7 +81,8 @@ chmod +x /usr/local/bin/chisel
 # Флаг --reverse важен для обратных туннелей.
 # Для mTLS серверу необходимо верифицировать сертификат клиента.
 # Предполагается, что client.crt, client.key, ca.crt присутствуют на VDS1.
-nohup /usr/local/bin/chisel server --port 2023 --reverse --tls-cert /home/igor04091968/client.crt --tls-key /home/igor04091968/client.key --tls-ca /home/igor04091968/ca.crt > /dev/null 2>&1 &
+nohup /usr/local/bin/chisel server --port 443 --reverse --tls-cert /etc/letsencrypt/live/vds1.iri1968.dpdns.org/fullchain.pem --tls-key /etc/letsencrypt/live/vds1.iri1968.dpdns.org/privkey.pem --tls-ca /home/igor04091968/ca.crt > /dev/null 2>&1 &
+# Примечание: --tls-ca используется для проверки сертификата клиента. Предполагается, что /home/igor04091968/ca.crt является корневым CA, подписавшим client.crt.
 ```
 
 ## 2. Настройка Hugging Face Space
@@ -149,7 +160,7 @@ export XUI_DB_FOLDER=/tmp
 run_chisel() {
   while true; do
     echo "Starting chisel client with mTLS..."
-    /usr/local/bin/chisel client -v --auth "cloud:2025" --tls-cert /etc/chisel/client.crt --tls-key /etc/chisel/client.key --tls-ca /etc/chisel/ca.crt https://vds1.iri1968.dpdns.org R:2023:127.0.0.1:2023
+    /usr/local/bin/chisel client -v --auth "cloud:2025" --tls-cert /etc/chisel/client.crt --tls-key /etc/chisel/client.key --tls-ca /etc/chisel/ca.crt https://vds1.iri1968.dpdns.org:443 R:2023:127.0.0.1:2023
     echo "Chisel client exited. Restarting in 5 seconds..."
     sleep 5
   ne
