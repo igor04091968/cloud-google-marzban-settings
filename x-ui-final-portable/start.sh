@@ -7,7 +7,7 @@ export XUI_DB_FOLDER=/tmp
 run_chisel() {
   while true; do
     echo "Starting chisel client with mTLS..."
-    /usr/local/bin/chisel client -v --auth "cloud:2025" vds1.iri1968.dpdns.org:8000 R:8001:127.0.0.1:2023
+    /usr/local/bin/chisel client -v --auth "cloud:2025" https://vds1.iri1968.dpdns.org/proxy R:8001:127.0.0.1:2023
     echo "Chisel client exited. Restarting in 5 seconds..."
     sleep 5
   done
