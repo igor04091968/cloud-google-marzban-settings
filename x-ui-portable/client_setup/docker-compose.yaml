@@ -1,0 +1,29 @@
+version: '3.3'
+
+services:
+  x-ui:
+    image: x-ui-tunnel-warp:latest
+    container_name: x-ui
+    ports:
+      - "2023:2023"
+    volumes:
+      - x-ui-data:/etc/x-ui/
+    restart: always
+    cap_add:
+      - NET_ADMIN
+
+  chisel-client:
+    image: jpillora/chisel:latest
+    container_name: chisel-client
+    restart: always
+    command:
+      - "client"
+      - "-v"
+      - "--skip-verify"
+      - "https://vds1.iri1968.dpdns.org:80"
+      - "R:8001:x-ui:2023"
+    depends_on:
+      - x-ui
+
+volumes:
+  x-ui-data:

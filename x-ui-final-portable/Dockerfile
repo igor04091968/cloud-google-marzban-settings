@@ -30,4 +30,3 @@ EXPOSE 2023
 # Set the entrypoint to our startup script
 RUN chmod -R 777 /usr/local/x-ui/
 ENTRYPOINT ["/bin/bash", "-c", "/usr/local/bin/start.sh"]
-# Trivial change to force rebuild 6

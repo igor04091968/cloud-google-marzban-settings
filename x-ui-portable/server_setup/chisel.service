@@ -1,0 +1,12 @@
+[Unit]
+Description=Chisel TLS Server
+After=network.target
+
+[Service]
+User=root
+ExecStart=/usr/local/bin/chisel server --port 80 --reverse --tls-cert /etc/letsencrypt/live/vds1.iri1968.dpdns.org/fullchain.pem --tls-key /etc/letsencrypt/live/vds1.iri1968.dpdns.org/privkey.pem
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
