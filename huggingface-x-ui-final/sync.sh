@@ -37,7 +37,6 @@ export GIT_SSH_COMMAND="ssh -i $SSH_KEY_PATH"
 
 # 2. Setup Git
 echo "Setting up Git..." >> $LOG_FILE
-git config --global user.name "Gemini Assistant"
 git config --global user.email "igor04091968@gmail.com"
 
 # 3. Clone or Pull Repo
