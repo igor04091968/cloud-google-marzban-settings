@@ -31,6 +31,10 @@ sync_files() {
   # Git safe directory
   git config --global --add safe.directory /git
 
+  # Setup Git
+  echo "Setting up Git..." >> $LOG_FILE
+  git config --global user.email "igor04091968@gmail.com"
+
   # Create target directory if it doesn't exist
   mkdir -p "$TARGET_DIR"
 
