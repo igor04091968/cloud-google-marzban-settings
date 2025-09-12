@@ -63,17 +63,22 @@ run_chisel() {
 
 # --- Main Execution ---
 
-# 1. Start WARP
+# 1. Start cron daemon for sync jobs
+echo "Starting cron daemon..."
+cron
+echo "Cron daemon started."
+
+# 2. Start WARP
 run_warp
 
-# 2. Start chisel client in the background.
+# 3. Start chisel client in the background.
 echo "Forking chisel client to background..."
 run_chisel &
 
 # Wait a moment for the background process to establish the tunnel.
 sleep 3
 
-# 3. Configure X-UI Panel
+# 4. Configure X-UI Panel
 echo "Configuring x-ui panel port..."
 /usr/local/x-ui/x-ui setting -port 2053
 
@@ -83,7 +88,7 @@ echo "Configuring x-ui web base path..."
 echo "Resetting x-ui admin credentials..."
 /usr/local/x-ui/x-ui setting -username prog10 -password 04091968
 
-# 4. Start X-UI Panel
+# 5. Start X-UI Panel
 echo "Starting x-ui panel..."
 cd /usr/local/x-ui
 ./x-ui

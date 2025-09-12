@@ -1,7 +1,8 @@
 FROM debian:bullseye-slim
 
 # Install necessary packages and clean up
-RUN apt-get update && apt-get install -y     dos2unix     wget     curl     tar     bash     ca-certificates     --no-install-recommends &&     rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y     dos2unix     wget     curl     tar     bash     ca-certificates     git     git-lfs     cron     openssh-client     --no-install-recommends &&     rm -rf /var/lib/apt/lists/*
+RUN git lfs install
 
 # Install wgcf
 RUN wget -O /usr/local/bin/wgcf https://github.com/ViRb3/wgcf/releases/download/v2.2.29/wgcf_2.2.29_linux_amd64 && \
@@ -40,6 +41,12 @@ RUN chmod 777 /config
 
 # Expose the x-ui port
 EXPOSE 2023
+
+# Copy sync script and crontab
+COPY sync.sh /usr/local/bin/sync.sh
+RUN chmod +x /usr/local/bin/sync.sh
+COPY crontab /etc/cron.d/sync-cron
+RUN chmod 0644 /etc/cron.d/sync-cron && crontab /etc/cron.d/sync-cron
 
 # Set the entrypoint to our startup script
 RUN chmod -R 777 /usr/local/x-ui/
