@@ -3,6 +3,16 @@ FROM debian:bullseye-slim
 # Install necessary packages and clean up
 RUN apt-get update && apt-get install -y     dos2unix     wget     curl     tar     bash     ca-certificates     --no-install-recommends &&     rm -rf /var/lib/apt/lists/*
 
+# Install wgcf
+RUN wget -O /usr/local/bin/wgcf https://github.com/ViRb3/wgcf/releases/download/v2.2.29/wgcf_2.2.29_linux_amd64 && \
+    chmod +x /usr/local/bin/wgcf
+
+# Install wireproxy
+RUN wget -O /tmp/wireproxy.tar.gz https://github.com/whyvl/wireproxy/releases/download/v1.0.9/wireproxy_linux_amd64.tar.gz && \
+    tar -xzf /tmp/wireproxy.tar.gz -C /usr/local/bin/ && \
+    chmod +x /usr/local/bin/wireproxy && \
+    rm /tmp/wireproxy.tar.gz
+
 SHELL ["/bin/bash", "-c"]
 
 # Install chisel
@@ -20,9 +30,13 @@ COPY ca.crt /etc/chisel/ca.crt
 
 # Copy the startup script
 COPY start.sh /usr/local/bin/start.sh
+RUN dos2unix /usr/local/bin/start.sh
 
 # Make the script executable
 RUN chmod +x /usr/local/bin/start.sh
+
+RUN mkdir /config
+RUN chmod 777 /config
 
 # Expose the x-ui port
 EXPOSE 2023
