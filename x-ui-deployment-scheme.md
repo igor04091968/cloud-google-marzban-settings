@@ -1,5 +1,25 @@
 # X-UI Deployment Scheme
 
+```
++-----------------+      +--------------------------+      +-----------------+      +--------------------+
+| User's Browser  |----->| vds1.iri1968.dpdns.org   |----->| Chisel Server   |----->| x-ui Container     |
+| (HTTPS)         |      | (Nginx, Port 443)        |      | (Port 80)       |      | (Chisel Client)    |
++-----------------+      +--------------------------+      +-----------------+      +--------------------+
+                                 |                                                     |
+                                 |                                                     |
+                                 v                                                     v
+                         +-----------------+                                     +--------------------+
+                         | x-ui Panel      |                                     | x-ui.db & config.json|
+                         | (localhost:8443)|                                     +--------------------+
+                         +-----------------+                                                     |
+                                                                                                 | (sync.sh)
+                                                                                                 |
+                                                                                                 v
+                                                                                       +--------------------+
+                                                                                       | GitHub Repository  |
+                                                                                       +--------------------+
+```
+
 This document outlines the architecture for deploying and accessing the X-UI web interface, leveraging Nginx for secure HTTPS access and Chisel for tunneling.
 
 ## Components:

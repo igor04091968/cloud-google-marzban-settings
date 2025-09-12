@@ -44,6 +44,39 @@
       "streamSettings": null,
       "tag": "api",
       "sniffing": null
+    },
+    {
+      "listen": null,
+      "port": 40587,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "email": "api-user-local@test.com",
+            "flow": "",
+            "id": "a06d513a-d943-473d-81d8-2e8d1f5e73ec"
+          }
+        ],
+        "decryption": "none",
+        "fallbacks": []
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "none",
+        "tcpSettings": {
+          "header": {
+            "type": "none"
+          }
+        }
+      },
+      "tag": "inbound-40587",
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls"
+        ]
+      }
     }
   ],
   "outbounds": [

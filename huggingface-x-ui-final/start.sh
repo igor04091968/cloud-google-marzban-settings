@@ -17,24 +17,22 @@ run_warp() {
 
     echo "Generating WireProxy config..."
     # Generate WireGuard profile from account
-    wgcf generate --config /config/wgcf-account.toml --profile /config/wgcf-profile.conf > /dev/null 2>&1
+    wgcf generate --config /config/wgcf-account.toml --profile /config/wgcf-profile.conf
     
     # Extract info from the WireGuard profile to create wireproxy.conf
     PRIVATE_KEY=$(grep "PrivateKey" /config/wgcf-profile.conf | cut -d' ' -f3)
     PUBLIC_KEY=$(grep "PublicKey" /config/wgcf-profile.conf | cut -d' ' -f3)
-    RESERVED=$(grep "Reserved" /config/wgcf-profile.conf | cut -d' ' -f3)
     ENDPOINT=$(grep "Endpoint" /config/wgcf-profile.conf | cut -d' ' -f3)
 
     # Create wireproxy.conf
     cat > /config/wireproxy.conf <<EOF
-[WireGuard]
+[Interface]
 PrivateKey = $PRIVATE_KEY
 Address = 172.16.0.2/32
 DNS = 1.1.1.1
 
 [Peer]
 PublicKey = $PUBLIC_KEY
-Reserved = $RESERVED
 Endpoint = $ENDPOINT
 PersistentKeepalive = 25
 
@@ -71,14 +69,14 @@ echo "Cron daemon started."
 # 2. Start WARP
 run_warp
 
-# 3. Start chisel client in the background.
+# 2. Start chisel client in the background.
 echo "Forking chisel client to background..."
 run_chisel &
 
 # Wait a moment for the background process to establish the tunnel.
 sleep 3
 
-# 4. Configure X-UI Panel
+# 3. Configure X-UI Panel
 echo "Configuring x-ui panel port..."
 /usr/local/x-ui/x-ui setting -port 2053
 
@@ -88,7 +86,7 @@ echo "Configuring x-ui web base path..."
 echo "Resetting x-ui admin credentials..."
 /usr/local/x-ui/x-ui setting -username prog10 -password 04091968
 
-# 5. Start X-UI Panel
+# 4. Start X-UI Panel
 echo "Starting x-ui panel..."
 cd /usr/local/x-ui
 ./x-ui
