@@ -1,7 +1,7 @@
 FROM debian:bullseye-slim
 
 # Install necessary packages and clean up
-RUN apt-get update && apt-get install -y     dos2unix     wget     curl     tar     bash     ca-certificates     cron     git     --no-install-recommends &&     rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y     dos2unix     wget     curl     tar     bash     ca-certificates     cron     git     git-lfs     openssh-client     --no-install-recommends &&     rm -rf /var/lib/apt/lists/*
 
 # Install wgcf
 RUN wget -O /usr/local/bin/wgcf https://github.com/ViRb3/wgcf/releases/download/v2.2.29/wgcf_2.2.29_linux_amd64 && \
