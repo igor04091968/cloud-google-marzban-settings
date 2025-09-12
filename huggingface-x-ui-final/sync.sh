@@ -10,7 +10,7 @@ GIT_REPO_DIR="/git"
 LOG_FILE="$SCRIPT_DIR/sync.log"
 
 # Files to sync
-XUI_DB_PATH="/usr/local/x-ui/bin/x-ui.db"
+XUI_DB_PATH="/etc/x-ui/x-ui.db"
 XRAY_CONFIG_PATH="/usr/local/x-ui/bin/config.json"
 
 # Target directory in the git repo
