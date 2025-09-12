@@ -1,56 +1,89 @@
 #!/bin/bash
 
 # ==============================================================================
-# X-UI & Chisel Tunnel Start Script for Hugging Face Spaces
+# WARP + X-UI & Chisel Tunnel Start Script
 # ==============================================================================
 
-# Set a writable directory for the x-ui database, as the default is read-only.
-export XUI_DB_FOLDER=/tmp
+# --- WARP SOCKS5 Proxy Setup ---
+run_warp() {
+    echo "Setting up WARP..."
+    # Check if an account file already exists
+    if [ ! -f "/config/wgcf-account.toml" ]; then
+        echo "WARP account not found. Registering a new one..."
+        wgcf register --accept-tos --config /config/wgcf-account.toml
+    else
+        echo "Using existing WARP account."
+    fi
+
+    echo "Generating WireProxy config..."
+    # Generate WireGuard profile from account
+    wgcf generate --config /config/wgcf-account.toml --profile /config/wgcf-profile.conf > /dev/null 2>&1
+    
+    # Extract info from the WireGuard profile to create wireproxy.conf
+    PRIVATE_KEY=$(grep "PrivateKey" /config/wgcf-profile.conf | cut -d' ' -f3)
+    PUBLIC_KEY=$(grep "PublicKey" /config/wgcf-profile.conf | cut -d' ' -f3)
+    RESERVED=$(grep "Reserved" /config/wgcf-profile.conf | cut -d' ' -f3)
+    ENDPOINT=$(grep "Endpoint" /config/wgcf-profile.conf | cut -d' ' -f3)
+
+    # Create wireproxy.conf
+    cat > /config/wireproxy.conf <<EOF
+[WireGuard]
+PrivateKey = $PRIVATE_KEY
+Address = 172.16.0.2/32
+DNS = 1.1.1.1
+
+[Peer]
+PublicKey = $PUBLIC_KEY
+Reserved = $RESERVED
+Endpoint = $ENDPOINT
+PersistentKeepalive = 25
+
+[Socks5]
+BindAddress = 127.0.0.1:40000
+EOF
+
+    echo "Starting WireProxy in the background..."
+    # Run wireproxy in the background
+    /usr/local/bin/wireproxy --config /config/wireproxy.conf &
+    sleep 2 # Give it a moment to start
+    echo "WARP SOCKS5 proxy should be running on 127.0.0.1:40000"
+}
+
 
 # --- Chisel Client Configuration ---
-# This function runs the chisel client in a loop to ensure the tunnel
-# to the main server (vds1) is always active.
 run_chisel() {
   while true; do
     echo "Starting chisel client..."
-    # Connects to the chisel server on vds1.iri1968.dpdns.org at port 8080.
-    # -v : Verbose logging.
-    # --auth "cloud:2025" : Authenticates with the server.
-    # R:8000:127.0.0.1:2023 : Creates a REVERSE tunnel. It opens port 8000 on the
-    #                        SERVER (vds1) and forwards all traffic from there
-    #                        to port 2023 on THIS container (127.0.0.1:2023),
-    #                        where the x-ui panel is running.
-    /usr/local/bin/chisel client -v --auth "cloud:2025" vds1.iri1968.dpdns.org:8080 R:8000:127.0.0.1:2023
+    /usr/local/bin/chisel client -v --auth "cloud:2025" "https://vds1.iri1968.dpdns.org/chisel-ws" R:8001:127.0.0.1:2053
     
     echo "Chisel client exited. Restarting in 5 seconds..."
     sleep 5
   done
 }
 
-# Start the chisel client in the background.
+# --- Main Execution ---
+
+# 1. Start WARP
+run_warp
+
+# 2. Start chisel client in the background.
 echo "Forking chisel client to background..."
 run_chisel &
 
 # Wait a moment for the background process to establish the tunnel.
 sleep 3
 
-# --- X-UI Panel Configuration ---
-# Configure the x-ui panel settings.
-
-# Set the internal port for the x-ui panel to listen on.
+# 3. Configure X-UI Panel
 echo "Configuring x-ui panel port..."
-/usr/local/x-ui/x-ui setting -port 2023
+/usr/local/x-ui/x-ui setting -port 2053
 
-# Set the web base path to root (/).
 echo "Configuring x-ui web base path..."
 /usr/local/x-ui/x-ui setting -webBasePath /
 
-# Reset x-ui admin credentials for consistency.
 echo "Resetting x-ui admin credentials..."
 /usr/local/x-ui/x-ui setting -username prog10 -password 04091968
 
-# --- Start X-UI Panel ---
-# Start the main x-ui application in the foreground.
+# 4. Start X-UI Panel
 echo "Starting x-ui panel..."
 cd /usr/local/x-ui
 ./x-ui
