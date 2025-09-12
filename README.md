@@ -112,6 +112,14 @@ iptables-save > /etc/iptables/rules.v4
 
 ---
 
+## x-ui Container with Synchronization
+
+This project now includes a feature to automatically synchronize the `x-ui.db` and `config.json` files to this Git repository.
+
+For more details on how to build and run the container, see the [README.md](./huggingface-x-ui-final/README.md) file in the `huggingface-x-ui-final` directory.
+
+---
+
 ## Обход ограничений Cloud Shell для SSH-туннелей
 
 При работе в Google Cloud Shell стандартные утилиты для создания туннелей, такие как `chisel`, могут не работать из-за ограничений безопасности "песочницы". В частности, они не могут открыть локальный порт для прослушивания.
