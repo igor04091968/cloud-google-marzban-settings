@@ -35,23 +35,8 @@ sync_files() {
   echo "Setting up Git..." >> $LOG_FILE
   git config --global user.email "igor04091968@gmail.com"
 
-  # Create target directory if it doesn't exist
-  mkdir -p "$TARGET_DIR"
-
-  # Copy files
-  if [ -f "$XUI_DB_PATH" ]; then
-    cp "$XUI_DB_PATH" "$TARGET_DIR/x-ui.db"
-    log "Copied x-ui.db"
-  else
-    log "Warning: x-ui.db not found."
-  fi
-
-  if [ -f "$XRAY_CONFIG_PATH" ]; then
-    cp "$XRAY_CONFIG_PATH" "$TARGET_DIR/config.json"
-    log "Copied config.json"
-  else
-    log "Warning: config.json not found."
-  fi
+  # The cp commands are removed because the volume mounts make them redundant.
+  # The live database is already in the git repository on the host.
 
   # Git operations
   cd "$GIT_REPO_DIR" || exit 1
