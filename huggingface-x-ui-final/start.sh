@@ -17,22 +17,24 @@ run_warp() {
 
     echo "Generating WireProxy config..."
     # Generate WireGuard profile from account
-    wgcf generate --config /config/wgcf-account.toml --profile /config/wgcf-profile.conf
+    wgcf generate --config /config/wgcf-account.toml --profile /config/wgcf-profile.conf > /dev/null 2>&1
     
     # Extract info from the WireGuard profile to create wireproxy.conf
     PRIVATE_KEY=$(grep "PrivateKey" /config/wgcf-profile.conf | cut -d' ' -f3)
     PUBLIC_KEY=$(grep "PublicKey" /config/wgcf-profile.conf | cut -d' ' -f3)
+    RESERVED=$(grep "Reserved" /config/wgcf-profile.conf | cut -d' ' -f3)
     ENDPOINT=$(grep "Endpoint" /config/wgcf-profile.conf | cut -d' ' -f3)
 
     # Create wireproxy.conf
     cat > /config/wireproxy.conf <<EOF
-[Interface]
+[WireGuard]
 PrivateKey = $PRIVATE_KEY
 Address = 172.16.0.2/32
 DNS = 1.1.1.1
 
 [Peer]
 PublicKey = $PUBLIC_KEY
+Reserved = $RESERVED
 Endpoint = $ENDPOINT
 PersistentKeepalive = 25
 
@@ -61,12 +63,7 @@ run_chisel() {
 
 # --- Main Execution ---
 
-# 1. Start cron daemon for sync jobs
-echo "Starting cron daemon..."
-cron
-echo "Cron daemon started."
-
-# 2. Start WARP
+# 1. Start WARP
 run_warp
 
 # 2. Start chisel client in the background.
@@ -78,7 +75,7 @@ sleep 3
 
 # 3. Configure X-UI Panel
 echo "Configuring x-ui panel port..."
-/usr/local/x-ui/x-ui setting -port 2053
+/usr/local/x-ui/x-ui setting -port 2023
 
 echo "Configuring x-ui web base path..."
 /usr/local/x-ui/x-ui setting -webBasePath /
