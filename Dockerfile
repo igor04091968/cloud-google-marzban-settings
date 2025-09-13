@@ -11,6 +11,16 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
+# Install wgcf
+RUN wget -O /usr/local/bin/wgcf https://github.com/ViRb3/wgcf/releases/download/v2.2.29/wgcf_2.2.29_linux_amd64 && \
+    chmod +x /usr/local/bin/wgcf
+
+# Install wireproxy
+RUN wget -O /tmp/wireproxy.tar.gz https://github.com/whyvl/wireproxy/releases/download/v1.0.9/wireproxy_linux_amd64.tar.gz && \
+    tar -xzf /tmp/wireproxy.tar.gz -C /usr/local/bin/ && \
+    chmod +x /usr/local/bin/wireproxy && \
+    rm /tmp/wireproxy.tar.gz
+
 # Install chisel
 ARG CHISEL_VERSION=1.9.1
 RUN wget https://github.com/jpillora/chisel/releases/download/v${CHISEL_VERSION}/chisel_${CHISEL_VERSION}_linux_amd64.gz -O /tmp/chisel.gz && \
@@ -34,8 +44,14 @@ COPY start.sh /usr/local/bin/start.sh
 RUN dos2unix /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
 
+RUN mkdir -p /data /var/log && chmod 777 /data /var/log
+
+RUN mkdir -p /config && touch /config/cron.log && chmod 777 /config /config/cron.log
+
 # Expose the x-ui port (default is 2053, can be changed in config)
-EXPOSE 2053
+EXPOSE 2023
+
+WORKDIR /usr/local/x-ui
 
 # Set the entrypoint to execute with bash
 ENTRYPOINT ["/bin/bash", "/usr/local/bin/start.sh"]
