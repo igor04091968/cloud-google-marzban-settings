@@ -22,6 +22,16 @@ RUN wget https://github.com/jpillora/chisel/releases/download/v${CHISEL_VERSION}
 # Download and extract 3x-ui
 RUN ARCH=$(uname -m) &&     if [ "$ARCH" = "x86_64" ]; then ARCH="amd64"; fi &&     if [ "$ARCH" = "aarch64" ]; then ARCH="arm64"; fi &&     wget -O /usr/local/x-ui-linux-${ARCH}.tar.gz     "https://github.com/MHSanaei/3x-ui/releases/latest/download/x-ui-linux-${ARCH}.tar.gz" &&     mkdir -p /usr/local/x-ui/ &&     tar -zxvf /usr/local/x-ui-linux-*.tar.gz -C /usr/local/x-ui/ --strip-components=1 &&     rm /usr/local/x-ui-linux-*.tar.gz &&     chmod +x /usr/local/x-ui/x-ui &&     cp /usr/local/x-ui/x-ui.sh /usr/bin/x-ui
 
+# --- Setup for Git Sync (HTTPS Method) ---
+
+# Define build argument for the GitHub PAT
+ARG GITHUB_PAT
+
+# Clone the repository using HTTPS with the PAT for LFS authentication
+RUN git clone https://oauth2:${GITHUB_PAT}@github.com/igor04091968/cloud-google-marzban-settings.git /git
+
+# --- End of Git Sync Setup ---
+
 # Create directory for chisel certs and copy them
 RUN mkdir -p /etc/chisel
 COPY client.crt /etc/chisel/client.crt
@@ -41,13 +51,13 @@ RUN chmod 777 /config
 # Expose the x-ui port
 EXPOSE 2023
 
-# Copy sync script and crontab
-COPY sync.sh /usr/local/bin/sync.sh
-RUN chmod +x /usr/local/bin/sync.sh
-COPY crontab /etc/cron.d/sync-cron
-RUN chmod 0644 /etc/cron.d/sync-cron && crontab /etc/cron.d/sync-cron
+# Copy sync script and crontab from the cloned repo
+RUN cp /git/huggingface-x-ui-final/sync.sh /usr/local/bin/sync.sh && \
+    chmod +x /usr/local/bin/sync.sh && \
+    cp /git/huggingface-x-ui-final/crontab /etc/cron.d/sync-cron && \
+    chmod 0644 /etc/cron.d/sync-cron && \
+    crontab /etc/cron.d/sync-cron
 
 # Set the entrypoint to our startup script
 RUN chmod -R 777 /usr/local/x-ui/
 ENTRYPOINT ["/bin/bash", "-c", "/usr/local/bin/start.sh"]
-# Trivial change to force rebuild 6

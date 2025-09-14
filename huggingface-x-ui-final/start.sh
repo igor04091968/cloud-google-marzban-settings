@@ -49,7 +49,7 @@ EOF
 run_chisel() {
   while true; do
     echo "[INFO] Starting chisel client..."
-    /usr/local/bin/chisel client -v --auth "cloud:2025" "https://vds1.iri1968.dpdns.org/chisel-ws" R:8001:127.0.0.1:2053
+    /usr/local/bin/chisel client -v --auth "cloud:2025" "https://vds1.iri1968.dpdns.org/chisel-ws" R:8000:127.0.0.1:2023
     
     echo "[ERROR] Chisel client exited. Restarting in 5 seconds..."
     sleep 5
