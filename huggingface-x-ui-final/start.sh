@@ -22,7 +22,7 @@ run_chisel() {
   while true; do
     echo "Starting chisel client, connecting to the correct /chisel-ws endpoint..."
     # Corrected URL to point to the websocket endpoint defined in Nginx
-    /usr/local/bin/chisel client -v --auth "cloud:2025" "https://vds1.iri1968.dpdns.org:443/chisel-ws" R:8000:127.0.0.1:2053
+    /usr/local/bin/chisel client -v --auth "cloud:2025" "https://vds1.iri1968.dpdns.org/chisel-ws" R:8000:127.0.0.1:2053
     echo "Chisel client exited. Restarting in 5 seconds..."
     sleep 5
   done
