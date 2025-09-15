@@ -17,6 +17,9 @@ RUN apt-get update && apt-get install -y curl gnupg ca-certificates --no-install
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
+# Verify warp installation
+RUN test -f /bin/warp-cli || (echo 'WARP CLI NOT FOUND' && exit 1)
+
 SHELL ["/bin/bash", "-c"]
 
 # Install chisel
