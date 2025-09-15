@@ -2,15 +2,15 @@
 
 # --- WARP Setup ---
 echo "Starting WARP daemon..."
-warp-svc &
+/bin/warp-svc &
 sleep 3 # Give the daemon a moment to start
 
 echo "Connecting WARP..."
 # Try to register, ignore error if already registered
-warp-cli --accept-tos registration new > /dev/null 2>&1 || true
-warp-cli connect
+/bin/warp-cli --accept-tos registration new > /dev/null 2>&1 || true
+/bin/warp-cli connect
 echo "WARP status:"
-warp-cli status
+/bin/warp-cli status
 echo "WARP setup finished."
 # --- End WARP Setup ---
 
