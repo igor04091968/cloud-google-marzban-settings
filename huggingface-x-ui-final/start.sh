@@ -1,4 +1,5 @@
 #!/bin/bash
+echo "Architecture: $(uname -m)"
 
 # --- WARP Setup ---
 echo "Starting WARP daemon..."
