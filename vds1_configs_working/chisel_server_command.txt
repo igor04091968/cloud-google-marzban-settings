@@ -1,0 +1,1 @@
+chisel server --port 443 --auth cloud:2025 --reverse --tls-cert /etc/letsencrypt/live/vds1.iri1968.dpdns.org/fullchain.pem --tls-key /etc/letsencrypt/live/vds1.iri1968.dpdns.org/privkey.pem
