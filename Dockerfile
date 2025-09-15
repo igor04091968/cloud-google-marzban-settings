@@ -8,8 +8,19 @@ RUN apt-get update && apt-get install -y \
     tar \
     bash \
     ca-certificates \
+    git \
+    openssh-client \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
+
+# Configure SSH for Git
+RUN mkdir -p /root/.ssh && \
+    chmod 0700 /root/.ssh && \
+    ssh-keyscan github.com > /root/.ssh/known_hosts
+
+# Copy the private key and set permissions
+COPY id_rsa_huggingface /root/.ssh/id_rsa
+RUN chmod 600 /root/.ssh/id_rsa
 
 SHELL ["/bin/bash", "-c"]
 
