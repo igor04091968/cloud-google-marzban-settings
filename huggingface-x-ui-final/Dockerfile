@@ -1,6 +1,6 @@
 FROM debian:bullseye-slim
 
-# Install prerequisites
+# Install prerequisites (git and openssh-client removed)
 RUN apt-get update && apt-get install -y \
     curl \
     gnupg \
@@ -9,33 +9,26 @@ RUN apt-get update && apt-get install -y \
     wget \
     tar \
     bash \
-    git \
-    openssh-client \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
 SHELL ["/bin/bash", "-c"]
 
-# Set working directory
-WORKDIR /app
+# Create and set a safe, writable working directory
+WORKDIR /src/config
 
-# Install sing-box
+# Install sing-box, chisel, 3x-ui
 ARG SINGBOX_VERSION=1.12.8
 RUN wget -O /tmp/sing-box.tar.gz "https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-amd64.tar.gz" && \
     tar -zxvf /tmp/sing-box.tar.gz -C /tmp && \
     mv /tmp/sing-box-${SINGBOX_VERSION}-linux-amd64/sing-box /usr/local/bin/sing-box && \
     chmod +x /usr/local/bin/sing-box && \
     rm -rf /tmp/sing-box*
-
-# Install chisel
 ARG CHISEL_VERSION=1.10.1
 RUN wget https://github.com/jpillora/chisel/releases/download/v${CHISEL_VERSION}/chisel_${CHISEL_VERSION}_linux_amd64.gz -O /tmp/chisel.gz && \
     gunzip /tmp/chisel.gz && \
     mv /tmp/chisel /usr/local/bin/chisel && \
     chmod +x /usr/local/bin/chisel
-
-
-# Download and extract 3x-ui
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "x86_64" ]; then ARCH="amd64"; fi && \
     if [ "$ARCH" = "aarch64" ]; then ARCH="arm64"; fi && \
@@ -47,18 +40,16 @@ RUN ARCH=$(uname -m) && \
     chmod +x /usr/local/x-ui/x-ui && \
     cp /usr/local/x-ui/x-ui.sh /usr/bin/x-ui
 
-# Copy scripts and make them executable
-COPY warp_proxy.sh /usr/local/bin/warp_proxy.sh
-COPY sync.sh /usr/local/bin/sync.sh
-COPY start.sh /usr/local/bin/start.sh
-RUN chmod +x /usr/local/bin/warp_proxy.sh && \
-    chmod +x /usr/local/bin/sync.sh && \
-    chmod +x /usr/local/bin/start.sh
+# Copy all files from the repository into the work directory
+COPY . .
+
+# Make scripts executable
+RUN chmod +x /src/config/huggingface-x-ui-final/warp_proxy.sh && \
+    chmod +x /src/config/huggingface-x-ui-final/start.sh
 
 # Expose the x-ui port
 EXPOSE 2053
 
 # Set the entrypoint to our startup script
 RUN chmod -R 777 /usr/local/x-ui/
-ENTRYPOINT ["/bin/bash", "-c", "/usr/local/bin/start.sh"]
-
+ENTRYPOINT ["/bin/bash", "-c", "/src/config/huggingface-x-ui-final/start.sh"]
