@@ -1,6 +1,6 @@
 FROM debian:bullseye-slim
 
-# Install prerequisites (git and openssh-client removed)
+# Install prerequisites
 RUN apt-get update && apt-get install -y \
     curl \
     gnupg \
@@ -14,10 +14,10 @@ RUN apt-get update && apt-get install -y \
 
 SHELL ["/bin/bash", "-c"]
 
-# Create and set a safe, writable working directory
-WORKDIR /src/config
+# Set a safe working directory
+WORKDIR /opt/app
 
-# Install sing-box, chisel, 3x-ui
+# Install tools
 ARG SINGBOX_VERSION=1.12.8
 RUN wget -O /tmp/sing-box.tar.gz "https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-amd64.tar.gz" && \
     tar -zxvf /tmp/sing-box.tar.gz -C /tmp && \
@@ -40,16 +40,16 @@ RUN ARCH=$(uname -m) && \
     chmod +x /usr/local/x-ui/x-ui && \
     cp /usr/local/x-ui/x-ui.sh /usr/bin/x-ui
 
-# Copy only the application-specific files into the work directory
-COPY huggingface-x-ui-final/ .
+# Copy all files from the build context (huggingface-x-ui-final) into the work directory
+COPY . .
 
 # Make scripts executable
-RUN chmod +x /src/config/warp_proxy.sh && \
-    chmod +x /src/config/start.sh
+RUN chmod +x /opt/app/warp_proxy.sh && \
+    chmod +x /opt/app/start.sh
 
 # Expose the x-ui port
 EXPOSE 2053
 
 # Set the entrypoint to our startup script
 RUN chmod -R 777 /usr/local/x-ui/
-ENTRYPOINT ["/bin/bash", "-c", "/src/config/start.sh"]
+ENTRYPOINT ["/bin/bash", "-c", "/opt/app/start.sh"]
