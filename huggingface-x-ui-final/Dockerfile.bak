@@ -9,15 +9,10 @@ RUN apt-get update && apt-get install -y \
     wget \
     tar \
     bash \
-    git \
-    openssh-client \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
 SHELL ["/bin/bash", "-c"]
-
-# Set working directory
-WORKDIR /app
 
 # Install sing-box
 ARG SINGBOX_VERSION=1.12.8
@@ -47,13 +42,15 @@ RUN ARCH=$(uname -m) && \
     chmod +x /usr/local/x-ui/x-ui && \
     cp /usr/local/x-ui/x-ui.sh /usr/bin/x-ui
 
-# Copy scripts and make them executable
+# Copy the warp proxy script
 COPY warp_proxy.sh /usr/local/bin/warp_proxy.sh
-COPY sync.sh /usr/local/bin/sync.sh
+RUN chmod +x /usr/local/bin/warp_proxy.sh
+
+# Copy the startup script
 COPY start.sh /usr/local/bin/start.sh
-RUN chmod +x /usr/local/bin/warp_proxy.sh && \
-    chmod +x /usr/local/bin/sync.sh && \
-    chmod +x /usr/local/bin/start.sh
+
+# Make the script executable
+RUN chmod +x /usr/local/bin/start.sh
 
 # Expose the x-ui port
 EXPOSE 2053
@@ -61,4 +58,3 @@ EXPOSE 2053
 # Set the entrypoint to our startup script
 RUN chmod -R 777 /usr/local/x-ui/
 ENTRYPOINT ["/bin/bash", "-c", "/usr/local/bin/start.sh"]
-
