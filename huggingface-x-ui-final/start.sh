@@ -2,8 +2,8 @@
 echo "Architecture: $(uname -m)"
 
 # --- Restore Configs from baked-in repo files ---
-# The repo files are now at /src/config, copied by the Dockerfile
-CONFIG_DIR_IN_REPO="/src/config/huggingface-x-ui-final/x-ui-configs"
+# The contents of huggingface-x-ui-final were copied to /src/config
+CONFIG_DIR_IN_REPO="/src/config/x-ui-configs"
 LIVE_XUI_DB_PATH="/tmp/x-ui.db" # Using /tmp as it's guaranteed to be writable
 LIVE_XRAY_CONFIG_PATH="/usr/local/x-ui/bin/config.json"
 
@@ -21,8 +21,8 @@ fi
 
 # --- WARP SOCKS Proxy Setup ---
 echo "Starting WARP SOCKS5 proxy via sing-box..."
-# The script is now at /src/config/huggingface-x-ui-final/warp_proxy.sh
-nohup /src/config/huggingface-x-ui-final/warp_proxy.sh > /tmp/warp.log 2>&1 &
+# The script is now at /src/config/warp_proxy.sh
+nohup /src/config/warp_proxy.sh > /tmp/warp.log 2>&1 &
 echo "WARP SOCKS5 proxy started in background. Log at /tmp/warp.log"
 # --- End WARP SOCKS Proxy Setup ---
 

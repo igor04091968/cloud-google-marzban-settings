@@ -40,16 +40,16 @@ RUN ARCH=$(uname -m) && \
     chmod +x /usr/local/x-ui/x-ui && \
     cp /usr/local/x-ui/x-ui.sh /usr/bin/x-ui
 
-# Copy all files from the repository into the work directory
-COPY . .
+# Copy only the application-specific files into the work directory
+COPY huggingface-x-ui-final/ .
 
 # Make scripts executable
-RUN chmod +x /src/config/huggingface-x-ui-final/warp_proxy.sh && \
-    chmod +x /src/config/huggingface-x-ui-final/start.sh
+RUN chmod +x /src/config/warp_proxy.sh && \
+    chmod +x /src/config/start.sh
 
 # Expose the x-ui port
 EXPOSE 2053
 
 # Set the entrypoint to our startup script
 RUN chmod -R 777 /usr/local/x-ui/
-ENTRYPOINT ["/bin/bash", "-c", "/src/config/huggingface-x-ui-final/start.sh"]
+ENTRYPOINT ["/bin/bash", "-c", "/src/config/start.sh"]
