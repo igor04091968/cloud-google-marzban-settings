@@ -1,19 +1,11 @@
 #!/bin/bash
 echo "Architecture: $(uname -m)"
 
-# --- WARP Setup ---
-echo "Starting WARP daemon..."
-/bin/warp-svc &
-sleep 3 # Give the daemon a moment to start
-
-echo "Connecting WARP..."
-# Try to register, ignore error if already registered
-/bin/warp-cli --accept-tos registration new > /dev/null 2>&1 || true
-/bin/warp-cli connect
-echo "WARP status:"
-/bin/warp-cli status
-echo "WARP setup finished."
-# --- End WARP Setup ---
+# --- WARP SOCKS Proxy Setup ---
+echo "Starting WARP SOCKS5 proxy via sing-box..."
+nohup /usr/local/bin/warp_proxy.sh > /tmp/warp.log 2>&1 &
+echo "WARP SOCKS5 proxy started in background. Log at /tmp/warp.log"
+# --- End WARP SOCKS Proxy Setup ---
 
 # Set a writable directory for the x-ui database
 export XUI_DB_FOLDER=/tmp
