@@ -5,13 +5,13 @@ echo "Setting up SSH for Git in a temporary directory..."
 SSH_DIR="/tmp/.ssh"
 mkdir -p "$SSH_DIR"
 
-# This assumes the key is copied to /opt/app/id_rsa_huggingface in the Dockerfile
-if [ -f "/opt/app/id_rsa_huggingface" ]; then
-  cp /opt/app/id_rsa_huggingface "$SSH_DIR/id_rsa"
+# This assumes the key is copied to /app/id_rsa_huggingface in the Dockerfile
+if [ -f "/app/id_rsa_huggingface" ]; then
+  cp /app/id_rsa_huggingface "$SSH_DIR/id_rsa"
   chmod 600 "$SSH_DIR/id_rsa"
   echo "SSH key prepared."
 else
-  echo "Warning: SSH key /opt/app/id_rsa_huggingface not found."
+  echo "Warning: SSH key /app/id_rsa_huggingface not found."
 fi
 
 echo "Cloning/updating repository..."
@@ -19,16 +19,11 @@ echo "Cloning/updating repository..."
 export GIT_SSH_COMMAND="ssh -i $SSH_DIR/id_rsa -o StrictHostKeyChecking=no"
 
 # Clone the repository into the persistent /data directory if it doesn't exist
-if [ ! -d "/data/.git" ]; then
-  # Clone to a temporary directory and move contents to /data
-  # This avoids git complaining if /data is not empty
-  git clone git@hf.co:spaces/rachkovii68/x-ui /tmp/repo
-  mv /tmp/repo/.git /data/
-  # Move other files if necessary, be careful not to overwrite existing data
-  # For now, we assume we only need the .git directory for pulls
+if [ ! -d "/data/repo/.git" ]; then
+  git clone git@hf.co:spaces/rachkovii68/x-ui /data/repo
 else
-  echo "Repo already exists in /data. Pulling latest changes."
-  cd /data
+  echo "Repo already exists in /data/repo. Pulling latest changes."
+  cd /data/repo
   git pull
   cd /
 fi
@@ -45,16 +40,16 @@ export XUI_DB_FOLDER=/data
 mkdir -p /data
 
 # Copy the pre-configured database if it exists and the live one doesn't
-if [ -f "/opt/app/x-ui.db" ] && [ ! -f "$XUI_DB_PATH" ]; then
-    echo "Restoring x-ui.db from /opt/app/x-ui.db..."
-    cp "/opt/app/x-ui.db" "$XUI_DB_PATH"
+if [ -f "/app/x-ui.db" ] && [ ! -f "$XUI_DB_PATH" ]; then
+    echo "Restoring x-ui.db from /app/x-ui.db..."
+    cp "/app/x-ui.db" "$XUI_DB_PATH"
 fi
 
 # Copy the pre-configured xray config if it exists
-if [ -f "/opt/app/config.json" ]; then
-    echo "Restoring config.json from /opt/app/config.json..."
+if [ -f "/app/config.json" ]; then
+    echo "Restoring config.json from /app/config.json..."
     mkdir -p /etc/x-ui
-    cp "/opt/app/config.json" "/etc/x-ui/config.json"
+    cp "/app/config.json" "/etc/x-ui/config.json"
 fi
 
 
