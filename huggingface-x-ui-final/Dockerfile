@@ -9,14 +9,12 @@ RUN apt-get update && apt-get install -y \
     wget \
     tar \
     bash \
-    git \
-    openssh-client \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
 SHELL ["/bin/bash", "-c"]
 
-# Set a safe working directory
+# Set a working directory
 WORKDIR /opt/app
 
 # Install tools
@@ -40,15 +38,18 @@ RUN ARCH=$(uname -m) && \
     tar -zxvf /usr/local/x-ui-linux-*.tar.gz -C /usr/local/x-ui/ --strip-components=1 && \
     rm /usr/local/x-ui-linux-*.tar.gz && \
     chmod +x /usr/local/x-ui/x-ui && \
-    cp /usr/local/x-ui/x-ui.sh /usr/bin/x-ui
+    cp /usr/local/x-ui/x-ui.sh /usr/bin/x-ui && \
+    
+    # --- Backup original bin contents ---
+    mkdir -p /opt/xray-backup && \
+    cp -r /usr/local/x-ui/bin/. /opt/xray-backup/
 
 # Copy all files from the build context (huggingface-x-ui-final) into the work directory
 COPY . .
 
 # Make scripts executable
 RUN chmod +x /opt/app/warp_proxy.sh && \
-    chmod +x /opt/app/start.sh && \
-    chmod +x /opt/app/sync.sh
+    chmod +x /opt/app/start.sh
 
 # Expose the x-ui port
 EXPOSE 2023

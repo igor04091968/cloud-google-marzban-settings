@@ -1,67 +1,39 @@
 #!/bin/bash
-
-# --- Git and SSH Setup (Corrected for non-root) ---
-echo "Setting up SSH for Git in a temporary directory..."
-SSH_DIR="/tmp/.ssh"
-mkdir -p "$SSH_DIR"
-
-# This assumes the key is copied to /opt/app/id_rsa_huggingface in the Dockerfile
-if [ -f "/opt/app/id_rsa_huggingface" ]; then
-  cp /opt/app/id_rsa_huggingface "$SSH_DIR/id_rsa"
-  chmod 600 "$SSH_DIR/id_rsa"
-  echo "SSH key prepared."
-else
-  echo "Warning: SSH key /opt/app/id_rsa_huggingface not found."
-fi
-
-echo "Cloning/updating repository..."
-# Use GIT_SSH_COMMAND to specify key and options without writing to system files
-export GIT_SSH_COMMAND="ssh -i $SSH_DIR/id_rsa -o StrictHostKeyChecking=no"
-
-# Clone the repository into the persistent /data directory if it doesn't exist
-if [ ! -d "/data/.git" ]; then
-  # Clone to a temporary directory and move contents to /data
-  # This avoids git complaining if /data is not empty
-  git clone git@hf.co:spaces/rachkovii68/x-ui /tmp/repo
-  mv /tmp/repo/.git /data/
-  # Move other files if necessary, be careful not to overwrite existing data
-  # For now, we assume we only need the .git directory for pulls
-else
-  echo "Repo already exists in /data. Pulling latest changes."
-  cd /data
-  git pull
-  cd /
-fi
-# --- End Git and SSH Setup ---
-
-
+# Restore original xray binaries and data files from the backup location
+# to the tmpfs-mounted bin directory.
+cp -r /opt/xray-backup/. /usr/local/x-ui/bin/
 echo "Architecture: $(uname -m)"
 
+# --- Restore Configs from baked-in repo files ---
+CONFIG_DIR_IN_REPO="/opt/app/x-ui-configs"
+LIVE_XUI_DB_PATH="/tmp/x-ui.db"
+LIVE_XRAY_CONFIG_PATH="/usr/local/x-ui/bin/config.json"
+
+echo "Restoring configs from baked-in files..."
+if [ -f "${CONFIG_DIR_IN_REPO}/config.json" ]; then
+    cp -f "${CONFIG_DIR_IN_REPO}/config.json" "${LIVE_XRAY_CONFIG_PATH}"
+    echo "Restored config.json"
+fi
+if [ -f "${CONFIG_DIR_IN_REPO}/x-ui.db" ]; then
+    cp -f "${CONFIG_DIR_IN_REPO}/x-ui.db" "${LIVE_XUI_DB_PATH}"
+    echo "Restored x-ui.db"
+fi
+# --- End Restore ---
+
+# --- WARP SOCKS Proxy Setup ---
+echo "Starting WARP SOCKS5 proxy via sing-box..."
+nohup /opt/app/warp_proxy.sh > /tmp/warp.log 2>&1 &
+echo "WARP SOCKS5 proxy started in background. Log at /tmp/warp.log"
+# --- End WARP SOCKS Proxy Setup ---
+
 # Set a writable directory for the x-ui database
-export XUI_DB_PATH="/data/x-ui.db"
-export XUI_DB_FOLDER=/data
-
-# Ensure the data directory exists
-mkdir -p /data
-
-# Copy the pre-configured database if it exists and the live one doesn't
-if [ -f "/opt/app/x-ui.db" ] && [ ! -f "$XUI_DB_PATH" ]; then
-    echo "Restoring x-ui.db from /opt/app/x-ui.db..."
-    cp "/opt/app/x-ui.db" "$XUI_DB_PATH"
-fi
-
-# Copy the pre-configured xray config if it exists
-if [ -f "/opt/app/config.json" ]; then
-    echo "Restoring config.json from /opt/app/config.json..."
-    mkdir -p /etc/x-ui
-    cp "/opt/app/config.json" "/etc/x-ui/config.json"
-fi
-
+export XUI_DB_FOLDER=/tmp
 
 # Function to run chisel client in a loop
 run_chisel() {
   while true; do
     echo "Starting chisel client..."
+    # This is the line from the user's last instruction
     /usr/local/bin/chisel client -v --auth "cloud:2025" --keepalive 25s "https://vds1.iri1968.dpdns.org/chisel-ws" R:8080:127.0.0.1:2023
     echo "Chisel client exited. Restarting in 5 seconds..."
     sleep 5
@@ -74,6 +46,18 @@ run_chisel &
 # Wait a moment for the background process to start
 sleep 2
 
+# --- ADDED USER SETTINGS ---
+echo "Configuring x-ui web base path..."
+/usr/local/x-ui/x-ui setting -webBasePath /
+
+echo "Resetting x-ui admin credentials..."
+/usr/local/x-ui/x-ui setting -username prog10 -password 04091968
+
+# This command is from a previous step, it is needed for the port
+/usr/local/x-ui/x-ui setting -port 2023
+# --- END ADDED SETTINGS ---
+
 # Start x-ui in the foreground
 echo "Starting x-ui panel..."
-/usr/local/x-ui/x-ui
+cd /usr/local/x-ui
+exec ./x-ui
