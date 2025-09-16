@@ -29,6 +29,11 @@
         "protocol": [
           "bittorrent"
         ]
+      },
+      {
+        "type": "field",
+        "network": "tcp,udp",
+        "outboundTag": "warp-out"
       }
     ]
   },
