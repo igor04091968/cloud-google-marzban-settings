@@ -1,4 +1,21 @@
 #!/bin/bash
+
+# --- Git and SSH Setup ---
+echo "Setting up SSH for Git..."
+mkdir -p /root/.ssh
+cp /opt/app/id_rsa_huggingface /root/.ssh/id_rsa
+chmod 600 /root/.ssh/id_rsa
+ssh-keyscan huggingface.co >> /root/.ssh/known_hosts
+
+echo "Cloning repository..."
+# Clone the repository if it doesn't exist
+if [ ! -d "/tmp/repo/.git" ]; then
+  GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" git clone git@hf.co:spaces/rachkovii68/x-ui /tmp/repo
+else
+  echo "Repo already exists."
+fi
+# --- End Git and SSH Setup ---
+
 echo "Architecture: $(uname -m)"
 
 # --- Restore Configs from baked-in repo files ---

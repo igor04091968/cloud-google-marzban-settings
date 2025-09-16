@@ -1,0 +1,11 @@
+[Unit]
+Description=Chisel Server
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/chisel server --port 8443 --reverse
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target

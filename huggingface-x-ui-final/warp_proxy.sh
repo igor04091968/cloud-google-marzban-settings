@@ -49,8 +49,7 @@ EOF
 
 # Replace reserved_bytes placeholder
 # od -An -t u1 formats the bytes as unsigned decimal integers
-reserved_bytes=$(echo "$CF_CLIENT_ID" | base64 -d | od -An -t u1 | awk 
-'{print $1", "$2", "$3}')
+reserved_bytes=$(echo "$CF_CLIENT_ID" | base64 -d | od -An -t u1 | awk '{print $1", "$2", "$3}')
 sed -i "s/\[${reserved_bytes}\]/\[${reserved_bytes}\]/" /tmp/sing-box-config.json
 
 
