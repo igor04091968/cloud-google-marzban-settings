@@ -34,7 +34,7 @@ run_chisel() {
   while true; do
     echo "Starting chisel client..."
     # This is the line from the user's last instruction
-    /usr/local/bin/chisel client -v --auth "cloud:2025" --keepalive 25s "https://vds1.iri1968.dpdns.org/chisel-ws" R:8080:127.0.0.1:2023
+    /usr/local/bin/chisel client -v --auth "cloud:2025" --keepalive 25s "https://vds1.iri1968.dpdns.org/chisel-ws" R:8080:127.0.0.1:2023 R:8081:127.0.0.1:20001
     echo "Chisel client exited. Restarting in 5 seconds..."
     sleep 5
   done
