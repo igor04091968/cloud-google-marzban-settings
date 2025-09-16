@@ -48,7 +48,7 @@ RUN chmod +x /opt/app/warp_proxy.sh && \
     chmod +x /opt/app/start.sh
 
 # Expose the x-ui port
-EXPOSE 2053
+EXPOSE 2023
 
 # Set the entrypoint to our startup script
 RUN chmod -R 777 /usr/local/x-ui/

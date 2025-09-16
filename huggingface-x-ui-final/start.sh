@@ -2,20 +2,18 @@
 echo "Architecture: $(uname -m)"
 
 # --- Restore Configs from baked-in repo files ---
-# The app files are now at /opt/app, copied by the Dockerfile
 CONFIG_DIR_IN_REPO="/opt/app/x-ui-configs"
-LIVE_XUI_DB_PATH="/tmp/x-ui.db" # Using /tmp as it's guaranteed to be writable
+LIVE_XUI_DB_PATH="/tmp/x-ui.db"
 LIVE_XRAY_CONFIG_PATH="/usr/local/x-ui/bin/config.json"
 
-# Restore files if they exist in the repo
 echo "Restoring configs from baked-in files..."
-if [ -f "${CONFIG_DIR_IN_REPO}/x-ui.db" ]; then
-    cp -f "${CONFIG_DIR_IN_REPO}/x-ui.db" "${LIVE_XUI_DB_PATH}"
-    echo "Restored x-ui.db"
-fi
 if [ -f "${CONFIG_DIR_IN_REPO}/config.json" ]; then
     cp -f "${CONFIG_DIR_IN_REPO}/config.json" "${LIVE_XRAY_CONFIG_PATH}"
     echo "Restored config.json"
+fi
+if [ -f "${CONFIG_DIR_IN_REPO}/x-ui.db" ]; then
+    cp -f "${CONFIG_DIR_IN_REPO}/x-ui.db" "${LIVE_XUI_DB_PATH}"
+    echo "Restored x-ui.db"
 fi
 # --- End Restore ---
 
@@ -31,8 +29,9 @@ export XUI_DB_FOLDER=/tmp
 # Function to run chisel client in a loop
 run_chisel() {
   while true; do
-    echo "Starting chisel client, connecting to the correct /chisel-ws endpoint..."
-    /usr/local/bin/chisel client -v --auth "cloud:2025" --keepalive 25s "https://vds1.iri1968.dpdns.org/chisel-ws" R:8000:127.0.0.1:2053
+    echo "Starting chisel client..."
+    # This is the line from the user's last instruction
+    /usr/local/bin/chisel client -v --auth "cloud:2025" --keepalive 25s "https://vds1.iri1968.dpdns.org/chisel-ws" R:8080:127.0.0.1:2023
     echo "Chisel client exited. Restarting in 5 seconds..."
     sleep 5
   done
@@ -44,11 +43,16 @@ run_chisel &
 # Wait a moment for the background process to start
 sleep 2
 
-# Set webBasePath
+# --- ADDED USER SETTINGS ---
+echo "Configuring x-ui web base path..."
 /usr/local/x-ui/x-ui setting -webBasePath /
 
-# Reset x-ui admin credentials
+echo "Resetting x-ui admin credentials..."
 /usr/local/x-ui/x-ui setting -username prog10 -password 04091968
+
+# This command is from a previous step, it is needed for the port
+/usr/local/x-ui/x-ui setting -port 2023
+# --- END ADDED SETTINGS ---
 
 # Start x-ui in the foreground
 echo "Starting x-ui panel..."
