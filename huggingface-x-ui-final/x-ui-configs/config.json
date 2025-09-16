@@ -49,6 +49,24 @@
       "streamSettings": null,
       "tag": "api",
       "sniffing": null
+    },
+    {
+      "tag": "vless-in",
+      "port": 20001,
+      "listen": "0.0.0.0",
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "978b0df4-479f-452b-8cff-816ec34b04af",
+            "email": "user@example.com"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "tcp"
+      }
     }
   ],
   "outbounds": [
