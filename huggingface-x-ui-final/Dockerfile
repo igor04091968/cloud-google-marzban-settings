@@ -9,8 +9,6 @@ RUN apt-get update && apt-get install -y \
     wget \
     tar \
     bash \
-    git \
-    openssh-client \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
@@ -47,8 +45,7 @@ COPY . .
 
 # Make scripts executable
 RUN chmod +x /opt/app/warp_proxy.sh && \
-    chmod +x /opt/app/start.sh && \
-    chmod +x /opt/app/sync.sh
+    chmod +x /opt/app/start.sh
 
 # Expose the x-ui port
 EXPOSE 2023
