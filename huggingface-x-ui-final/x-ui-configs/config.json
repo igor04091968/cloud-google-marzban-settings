@@ -60,6 +60,18 @@
       "tag": "blocked",
       "protocol": "blackhole",
       "settings": {}
+    },
+    {
+      "protocol": "socks",
+      "settings": {
+        "servers": [
+          {
+            "address": "127.0.0.1",
+            "port": 1080
+          }
+        ]
+      },
+      "tag": "warp-out"
     }
   ],
   "transport": null,
