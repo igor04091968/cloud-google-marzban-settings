@@ -59,13 +59,14 @@
         "clients": [
           {
             "id": "978b0df4-479f-452b-8cff-816ec34b04af",
-            "email": "user@example.com"
+            "encryption": "none"
           }
         ],
         "decryption": "none"
       },
       "streamSettings": {
         "network": "ws",
+        "security": "tls",
         "wsSettings": {
           "path": "/vds1client"
         }

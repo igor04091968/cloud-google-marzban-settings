@@ -47,6 +47,9 @@ RUN ARCH=$(uname -m) && \
 # Copy all files from the build context (huggingface-x-ui-final) into the work directory
 COPY . .
 
+# Copy certificates
+COPY certs/ /usr/local/x-ui/ssl/
+
 # Make scripts executable
 RUN chmod +x /opt/app/warp_proxy.sh && \
     chmod +x /opt/app/start.sh
