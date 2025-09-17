@@ -4,7 +4,7 @@ This document describes the components, configurations, and data flow of the adv
 
 ## 1. Overview
 
-The primary goal of this setup is to create a stable, secure, and multi-purpose connection between a sandboxed environment (like Google Cloud Shell or a Hugging Face Space, referred to as **cs**) and a publicly accessible Virtual Dedicated Server (**vds1**).
+The primary goal of this setup is to create a stable, secure, and multi-purpose connection between a sandboxed environment (like Google Cloud Shell, referred to as **cs**) and a publicly accessible Virtual Dedicated Server (**vds1**).
 
 This is achieved by running a specialized Docker container within **cs** that initiates a persistent, reverse SSH tunnel to **vds1**.
 
@@ -12,7 +12,7 @@ This is achieved by running a specialized Docker container within **cs** that in
 
 There are three main components in this architecture:
 
-1.  **Cloud Shell (cs) / Hugging Face Space**
+1.  **Cloud Shell (cs)**
     *   **Role**: The host environment where the Docker container runs.
     *   **Characteristics**: Can have a dynamic IP address, may have restricted inbound traffic.
 
@@ -22,15 +22,18 @@ There are three main components in this architecture:
 
 3.  **VDS1 (vds1.iri1968.dpdns.org)**
     *   **Role**: The public-facing anchor point and remote server.
-    *   **Characteristics**: Has a static IP address and open ports. It runs a service on port `143` that `stunnel` from the container connects to.
+    *   **Characteristics**: Has a static IP address and open ports. It runs a service on port `993` that `stunnel` from the container connects to.
 
 ## 3. Container Configuration
 
 The container is built from the `Dockerfile` and runs the following key software:
 
-*   **`stunnel`**: Runs as a client. It connects to **vds1** on port `143` and creates a secure TLS tunnel, which is then exposed locally within the container on `127.0.0.1:2222`.
-*   **`ssh` (client)**: This is the final and most critical piece. It connects to the local `stunnel` endpoint (`127.0.0.1:2222`) and authenticates on **vds1** as the `root` user. Once connected, it establishes several **reverse tunnels** (`-R`) back to **vds1**.
+*   **`openssh` (sshd)**: Runs an SSH server to allow access into the container itself.
+*   **`stunnel`**: Runs as a client. It connects to **vds1** on port `993` and creates a secure TLS tunnel, which is then exposed locally within the container on `127.0.0.1:2222`.
 *   **`iperf3`**: A network performance testing tool.
+*   **`ssh` (client)**: This is the final and most critical piece. It performs two main functions:
+    1.  It connects to the local SSH server (`sshd`) *through* the `stunnel` tunnel (`ssh root@127.0.0.1 -p 2222`).
+    2.  Once connected, it establishes several **reverse tunnels** (`-R`) back to **vds1**.
 
 ## 4. Data Flow and Relationships
 
@@ -39,24 +42,28 @@ The connection is established in a "reverse" direction, from the inside (**cs**)
 ```mermaid
 graph TD
     subgraph "Cloud Shell (cs) / Hugging Face Space"
-        A[Container: ssh client] -- "connects to" --> B[local stunnel endpoint: 127.0.0.1:2222]
+        A[Container: tunnel-container]
     end
 
     subgraph "Internet"
-        C(vds1.iri1968.dpdns.org)
+        B(vds1.iri1968.dpdns.org)
     end
 
-    B -- "TLS Tunnel" --> C[:143]
-    C -- "Reverse Tunnels Established" --> A
+    A -- 1. stunnel client connects --> B[:993]
+    A -- "2. ssh client connects to self via stunnel" --> A
+    B -- "3. Reverse Tunnels Established" --> A
 
 ```
 
 **Step-by-step flow:**
 
 1.  The `entrypoint.sh` script starts inside the container.
-2.  `stunnel` connects to `vds1:143`, creating a secure link. This link is presented as `localhost:2222` inside the container.
-3.  The `ssh` client inside the container connects to `localhost:2222`, using the private key for **vds1** (`id_rsa_vds1`) and authenticating as `root`. The traffic is routed through the `stunnel` tunnel to the `stunnel` server on `vds1`, which in turn forwards it to the main `sshd` server on `vds1`.
-4.  Once this SSH session is active, the `-R` flags create the pathways back from `vds1` to the container. For example, `-R 0.0.0.0:2222:localhost:22` on `vds1` would forward traffic to port 22 inside the container's network.
+2.  `stunnel` connects to `vds1:993`, creating a secure link. This link is presented as `localhost:2222` inside the container.
+3.  The `ssh` client inside the container connects to `localhost:2222`, using the private key for **vds1** (`id_rsa_vds1`). The traffic is routed through the `stunnel` tunnel to the SSH server (`sshd`) running in the *same* container.
+4.  Once this SSH session is active, the `-R` flags create the following pathways:
+    *   Any traffic sent to `localhost:1080` on **vds1** is forwarded to the container.
+    *   Any traffic sent to `localhost:5201` on **vds1** is forwarded to the container (used for the `iperf3` test).
+    *   Any traffic sent to `localhost:2222` on **vds1** is forwarded to the container's SSH server on port 22.
 
 This architecture effectively makes services running inside the sandboxed **cs** container accessible from the public **vds1** server.
 

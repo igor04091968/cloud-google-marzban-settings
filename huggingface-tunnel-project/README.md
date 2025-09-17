@@ -1,13 +1,12 @@
 ---
-license: mit
 title: Advanced Tunnel Container
+license: mit
 sdk: docker
-emoji: 🚀
+app_port: 2222
+emoji: 🚇
 colorFrom: gray
 colorTo: indigo
 pinned: true
-app_port: 2222
-persistent_storage: true
 ---
 
 # Advanced Tunnel Container
