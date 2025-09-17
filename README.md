@@ -139,3 +139,74 @@ ssh -4 -f -N -L 5201:localhost:5201 root@vds1.iri1968.dpdns.org
 ```
 
 После выполнения этой команды `ssh` успешно создает фоновый процесс, который слушает указанный локальный порт и пробрасывает трафик через туннель. Это позволяет использовать `iperf`, `scp` и другие утилиты через созданный канал.
+
+---
+
+## Docker-based Dual SSH & iperf3 Tunnel
+
+This section describes the method for creating a persistent, multi-port reverse SSH tunnel using a Docker container. The container runs its own SSH server and an iperf3 server, and establishes a reverse tunnel to a remote VDS, forwarding ports for both services.
+
+### 1. Overview
+
+-   **Local Environment:** A Docker container running on a host (e.g., Google Cloud Shell).
+-   **Container Services:**
+    -   `sshd`: To allow SSH access *into* the container.
+    -   `iperf3 -s`: To run a speed test server.
+-   **Remote Server:** A VDS (`vds1.iri1968.dpdns.org`) that acts as the tunnel endpoint.
+-   **Tunnel:** A reverse SSH tunnel initiated from the container to the VDS.
+    -   Forwards VDS port `2224` to the container's `sshd` on port `22`.
+    -   Forwards VDS port `5201` to the container's `iperf3` server on port `5201`.
+
+### 2. Deployment Sequence
+
+**Step 1: Build the Docker Image**
+
+All source files are located in the `tunnel_docker/` directory. Build the image from the project root:
+
+```bash
+docker build -t tunnel_final:v4 -f /home/frad84435/cloud-google-marzban-settings/tunnel_docker/Dockerfile /home/frad84435/cloud-google-marzban-settings/tunnel_docker
+```
+
+**Step 2: Run the Container**
+
+Run the container in detached mode, mounting the VDS private key. This key is used by the container to authenticate with the VDS.
+
+```bash
+docker run --name tunnel_cloud_instance -d -v /home/frad84435/.ssh/id_rsa_vds1:/root/.ssh/id_rsa_vds1:ro tunnel_final:v4
+```
+
+### 3. Verification and Usage
+
+All verification commands are run from your local machine, but execute commands on `vds1`.
+
+**Step 1: Verify Tunnel Ports on VDS**
+
+Check that the `sshd` process on the VDS is listening on both forwarded ports.
+
+```bash
+ssh -i /home/frad84435/.ssh/id_rsa_vds1 root@vds1.iri1968.dpdns.org "ss -tlpn | grep -E '2224|5201'"
+```
+*Expected Output: You should see lines for both port `2224` and `5201` being listened to by the same `sshd` process.*
+
+**Step 2: Test SSH Access to Container**
+
+SSH from the VDS into the container to confirm the first tunnel works.
+
+```bash
+ssh -i /home/frad84435/.ssh/id_rsa_vds1 root@vds1.iri1968.dpdns.org 'ssh -p 2224 -o "StrictHostKeyChecking=no" root@localhost "hostname"'
+```
+*Expected Output: The container's ID/hostname.*
+
+**Step 3: Test iperf3 Speed**
+
+Run the iperf3 client on the VDS to connect to the iperf3 server in the container.
+
+```bash
+ssh -i /home/frad84435/.ssh/id_rsa_vds1 root@vds1.iri1968.dpdns.org "iperf3 -c localhost -p 5201"
+```
+*Expected Output: A standard iperf3 speed test result.*
+
+### 4. Troubleshooting Summary
+
+-   **`port forwarding failed` in container logs:** A process on the VDS is already using the port. Find it with `ss -tlpn` and `kill` it.
+-   **`Permission denied (publickey)` when connecting:** The public key in the `Dockerfile` does not match the private key used for connection. Update the `Dockerfile` with the output of `ssh-keygen -y` for the correct private key.
