@@ -1,0 +1,38 @@
+# HMP Agent Dockerfile (Simplified for API-based LLM)
+
+FROM python:3.11-slim-bullseye AS builder
+
+# Устанавливаем только необходимые системные пакеты, если они есть
+RUN apt-get update --allow-insecure-repositories && apt-get install -y --allow-unauthenticated --no-install-recommends \
+    build-essential \
+    cmake \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Создаем и активируем виртуальное окружение
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Устанавливаем зависимости HMP (БЕЗ llama-cpp-python)
+RUN pip install --no-cache-dir "fastapi" "uvicorn[standard]" "python-multipart" "jinja2" "itsdangerous" "requests" "diskcache" "numpy" "werkzeug" "netifaces" "cryptography" "pyyaml" "bleach" "python-dateutil" "scikit-learn"
+
+
+# Финальный образ
+FROM python:3.11-slim-bullseye
+
+WORKDIR /app
+
+# Копируем зависимости
+COPY --from=builder /opt/venv /opt/venv
+
+# Копируем код агента
+COPY . .
+
+# Создаем директорию для моделей (хотя она больше не используется напрямую)
+RUN mkdir -p /app/models
+
+# Активируем venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+EXPOSE 8765
+CMD ["python3", "agents/start_repl.py"]
