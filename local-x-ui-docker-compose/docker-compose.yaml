@@ -1,0 +1,25 @@
+version: '3.3'
+
+services:
+  x-ui:
+    build: .
+    container_name: x-ui
+    ports:
+      - "2053:2053" # UI port
+    volumes:
+      - x-ui-data:/etc/x-ui/
+      - x-ui-certs:/root/cert/
+    environment:
+      - XRAY_VMESS_AEAD_FORCED=false
+      - XUI_ENABLE_FAIL2BAN=true
+    restart: always
+
+  chisel-client:
+    image: jpillora/chisel
+    container_name: chisel-client
+    command: client -v --auth cloud:2025 vds1.iri1968.dpdns.org:993 R:8443:x-ui:2053
+    restart: always
+
+volumes:
+  x-ui-data:
+  x-ui-certs:

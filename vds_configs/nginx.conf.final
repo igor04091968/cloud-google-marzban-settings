@@ -1,0 +1,47 @@
+# Блок для порта 443 (VLESS/VMess over TLS)
+server {
+    listen 443 ssl http2 proxy_protocol; # <--- ИЗМЕНЕНИЕ ЗДЕСЬ
+    listen [::]:443 ssl http2 proxy_protocol; # <--- И ИЗМЕНЕНИЕ ЗДЕСЬ
+    server_name vds1.iri1968.dpdns.org;
+
+    # SSL сертификаты
+    ssl_certificate /etc/letsencrypt/live/vds1.iri1968.dpdns.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/vds1.iri1968.dpdns.org/privkey.pem;
+    
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    location / {
+        # ВАЖНО: Проксируем на конечную точку туннеля chisel
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+
+# Блок для порта 8080 (Shadowsocks и др.)
+server {
+    listen 8080;
+    listen [::]:8080;
+    server_name vds1.iri1968.dpdns.org;
+
+    location / {
+        # Проксируем на ту же конечную точку chisel
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+}
+
+# Блок для порта 80 (перенаправление на HTTPS)
+server {
+    listen 80;
+    server_name vds1.iri1968.dpdns.org;
+    return 301 https://$host$request_uri;
+}

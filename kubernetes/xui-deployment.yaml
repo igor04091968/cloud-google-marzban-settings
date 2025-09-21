@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xui
+  namespace: marzban
+  labels:
+    app: xui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: xui
+  template:
+    metadata:
+      labels:
+        app: xui
+    spec:
+      containers:
+      - name: xui
+        image: ghcr.io/mhsanaei/3x-ui
+        ports:
+        - containerPort: 2053
+        readinessProbe:
+          httpGet:
+            path: /x-ui/
+            port: 2053
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        livenessProbe:
+          httpGet:
+            path: /x-ui/
+            port: 2053
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        volumeMounts:
+        - name: xui-data
+          mountPath: /etc/x-ui
+        - name: xui-db
+          mountPath: /var/lib/x-ui
+      volumes:
+      - name: xui-data
+        hostPath:
+          path: /data/xui
+          type: DirectoryOrCreate
+      - name: xui-db
+        hostPath:
+          path: /data/xui
+          type: DirectoryOrCreate

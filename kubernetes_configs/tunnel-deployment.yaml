@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tunnel-client
+  namespace: marzban
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tunnel-client
+  template:
+    metadata:
+      labels:
+        app: tunnel-client
+    spec:
+      containers:
+      - name: chisel-client
+        image: jpillora/chisel:1.9.1
+        args:
+        - "client"
+        - "--keepalive"
+        - "10s"
+        - "vds1.iri1968.dpdns.org:8000"
+        - "R:8001:marzban-controller.marzban.svc:8443"
+        - "R:62050:marzban-node.marzban.svc:62050"
+        - "R:socks"

@@ -1,0 +1,18 @@
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority: /root/.kube/certs/ca.crt
+    server: https://localhost:8444
+  name: minikube
+contexts:
+- context:
+    cluster: minikube
+    user: vds-admin
+  name: minikube
+current-context: minikube
+kind: Config
+preferences: {}
+users:
+- name: vds-admin
+  user:
+    token: eyJhbGciOiJSUzI1NiIsImtpZCI6IlRrVUdEN2dQc3M3UnZienl1V210MHFJX290d2pMODl4NTAtTS1jX2V5OTAifQ.eyJhdWQiOlsiaHR0cHM6Ly9rdWJlcm5ldGVzLmRlZmF1bHQuc3ZjLmNsdXN0ZXIubG9jYWwiXSwiZXhwIjoxNzU2NzM3NzkyLCJpYXQiOjE3NTY3MzQxOTIsImlzcyI6Imh0dHBzOi8va3ViZXJuZXRlcy5kZWZhdWx0LnN2Yy5jbHVzdGVyLmxvY2FsIiwianRpIjoiNGI5NmZhZWYtYTYwYi00ZDI3LWFlNDQtMzJmZmFkZDkzMThjIiwia3ViZXJuZXRlcy5pbyI6eyJuYW1lc3BhY2UiOiJkZWZhdWx0Iiwic2VydmljZWFjY291bnQiOnsibmFtZSI6InZkcy1hZG1pbiIsInVpZCI6ImU3ODZiMjFhLTYxNjktNDJmMi1hY2RhLThiZDgzOTEyYzg5MyJ9fSwibmJmIjoxNzU2NzM0MTkyLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6ZGVmYXVsdDp2ZHMtYWRtaW4ifQ.Iaved9Fxjc7I4qLg-s7JE4rhtJK2qzxUmP8PbRNX28KeyQ7G8KuWSiS3OneJf9Dxge8poWp1VVkB-dpwRGzqtEcmE5BGZJ1HOYiG0t8SpVAMp7cnmQdqHMzXbiUEMtYuyChbPOETveVcU2HM1TPRB9ojSgKBwYiRAeP4qfCu1xWVY__JX71aNdyyXbcP5rBEFKqD8i7ujfjuheNcYVlRK1eKtL66xcxh-CTgmes_k5W0acK2koFeSKRnzFL76sdvF7FOxO1drqtinZpmktW2qGkpiczoX7m6qxBSy8EORWAC8tvU4mLSy6oGjBQosfJCYgKq2M4FJ_TzqU-8N4WMnw

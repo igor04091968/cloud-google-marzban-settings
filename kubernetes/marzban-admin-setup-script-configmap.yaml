@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: marzban-admin-setup-script
+  namespace: marzban
+data:
+  setup_admin.sh: |
+    #!/bin/bash
+    # This script creates or updates an admin user in Marzban.
+    # It's designed to be run as an Init Container.
+
+    USERNAME="admin"
+    # Password will be passed via MARZBAN_ADMIN_PASSWORD environment variable
+    TELEGRAM_ID=""
+    DISCORD_WEBHOOK=""
+
+    echo "Running admin setup script..."
+
+    # Check if admin user already exists
+    marzban-cli admin list --username "$USERNAME" &>/dev/null
+    if [ $? -eq 0 ]; then
+      echo "Admin user '$USERNAME' already exists. Updating password if MARZBAN_ADMIN_PASSWORD is set."
+      # Update command if admin exists
+      if [ -n "$MARZBAN_ADMIN_PASSWORD" ]; then
+        env MARZBAN_ADMIN_PASSWORD="$MARZBAN_ADMIN_PASSWORD" marzban-cli admin update \
+          --username "$USERNAME" \
+          --password "$MARZBAN_ADMIN_PASSWORD" \
+          --telegram-id "$TELEGRAM_ID" \
+          --discord-webhook "$DISCORD_WEBHOOK"
+        if [ $? -eq 0 ]; then
+          echo "Admin user '$USERNAME' password updated successfully."
+        else
+          echo "Failed to update admin user '$USERNAME' password."
+        fi
+      else
+        echo "MARZBAN_ADMIN_PASSWORD not set. Skipping password update."
+      fi
+    else
+      echo "Admin user '$USERNAME' does not exist. Creating it."
+      # Create command if admin does not exist
+      if [ -n "$MARZBAN_ADMIN_PASSWORD" ]; then
+        env MARZBAN_ADMIN_PASSWORD="$MARZBAN_ADMIN_PASSWORD" marzban-cli admin create \
+          --username "$USERNAME" \
+          --sudo \
+          --telegram-id "$TELEGRAM_ID" \
+          --discord-webhook "$DISCORD_WEBHOOK"
+        if [ $? -eq 0 ]; then
+          echo "Admin user '$USERNAME' created successfully."
+        else
+          echo "Failed to create admin user '$USERNAME'."
+        fi
+      else
+        echo "MARZBAN_ADMIN_PASSWORD not set. Cannot create admin user."
+        exit 1
+      fi
+    fi
+
+    echo "Admin setup script finished."

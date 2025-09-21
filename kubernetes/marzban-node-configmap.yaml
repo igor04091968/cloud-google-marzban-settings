@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: marzban-node-config
+  namespace: marzban
+data:
+  SERVICE_PORT: "62050"
+  SSL_CERT_FILE: "/etc/marzban-node/certs/server.crt"
+  SSL_KEY_FILE: "/etc/marzban-node/certs/server.key"
+  SSL_CLIENT_CERT_FILE: "/etc/marzban-node/certs/ca.crt"
+  SERVICE_PROTOCOL: "rest"

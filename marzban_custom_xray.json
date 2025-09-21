@@ -1,0 +1,175 @@
+
+{
+    "log": {
+        "loglevel": "warning"
+    },
+    "inbounds": [
+        {
+            "listen": "0.0.0.0",
+            "port": 1088,
+            "protocol": "http",
+            "settings": {
+                "allowTransparent": true,
+                "timeout": 300
+            },
+            "sniffing": {
+                "destOverride": [
+                    "http",
+                    "tls"
+                ],
+                "enabled": true,
+                "metadataOnly": false
+            },
+            "tag": "http_IN"
+        },
+        {
+            "listen": "0.0.0.0",
+            "port": 1089,
+            "protocol": "socks",
+            "settings": {
+                "auth": "noauth",
+                "ip": "127.0.0.1",
+                "udp": true
+            },
+            "sniffing": {
+                "destOverride": [
+                    "http",
+                    "tls"
+                ],
+                "enabled": true,
+                "metadataOnly": false
+            },
+            "tag": "socks_IN"
+        }
+    ],
+    "outbounds": [
+        {
+            "protocol": "vmess",
+            "sendThrough": "0.0.0.0",
+            "settings": {
+                "vnext": [
+                    {
+                        "address": "https://github.com/ALIILAPRO/v2rayNG-Config",
+                        "port": 433,
+                        "users": [
+                            {
+                                "id": "Free",
+                                "security": "chacha20-poly1305"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "streamSettings": {
+                "sockopt": {
+                    "mark": 100
+                },
+                "tlsSettings": {
+                    "disableSystemRoot": true
+                },
+                "xtlsSettings": {
+                    "disableSystemRoot": true
+                }
+            },
+            "tag": "PROXY"
+        },
+        {
+            "protocol": "freedom",
+            "sendThrough": "0.0.0.0",
+            "settings": {
+                "domainStrategy": "AsIs",
+                "redirect": ":0"
+            },
+            "streamSettings": {
+                "sockopt": {
+                    "mark": 100
+                }
+            },
+            "tag": "DIRECT"
+        },
+        {
+            "protocol": "blackhole",
+            "sendThrough": "0.0.0.0",
+            "settings": {
+                "response": {
+                    "type": "none"
+                }
+            },
+            "streamSettings": {
+                "sockopt": {
+                    "mark": 100
+                }
+            },
+            "tag": "BLACKHOLE"
+        }
+    ],
+    "routing": {
+        "domainMatcher": "",
+        "domainStrategy": "AsIs",
+        "rules": [
+            {
+                "inboundTag": [
+                    "QV2RAY_API_INBOUND"
+                ],
+                "outboundTag": "QV2RAY_API",
+                "type": "field"
+            },
+            {
+                "outboundTag": "DIRECT",
+                "protocol": [
+                    "bittorrent"
+                ],
+                "type": "field"
+            },
+            {
+                "ip": [
+                    "geoip:private"
+                ],
+                "outboundTag": "DIRECT",
+                "type": "field"
+            },
+            {
+                "domain": [
+                    "youtube.com",
+                    "chatgpt.com",
+                    "googlevideo.com",
+                    "ip2.com",
+                    "ip2.org",
+                    "ip2.ru",
+                    "2ip.io",
+                    "2ip.com"
+                ],
+                "outboundTag": "PROXY",
+                "type": "field"
+            },
+            {
+                "domain": [
+                    "pushbullet.com",
+                    "gosuslugi.ru",
+                    "opennet.ru",
+                    "github.com",
+                    "openwrt.org",
+                    "cloudflare.com",
+                    "gmail.com",
+                    "google.com"
+                ],
+                "outboundTag": "DIRECT",
+                "type": "field"
+            },
+            {
+                "ip": [
+                    "geoip:cn"
+                ],
+                "outboundTag": "DIRECT",
+                "type": "field"
+            },
+            {
+                "domain": [
+                    "geosite:cn"
+                ],
+                "outboundTag": "DIRECT",
+                "type": "field"
+            }
+        ]
+    }
+}

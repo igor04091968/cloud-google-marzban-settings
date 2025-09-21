@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chisel-client
+  namespace: marzban
+  labels:
+    app: chisel-client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chisel-client
+  template:
+    metadata:
+      labels:
+        app: chisel-client
+    spec:
+      containers:
+      - name: chisel-client
+        image: jpillora/chisel
+        args: ["client", "--auth", "cloud:2025", "vds1.iri1968.dpdns.org:993", "R:443:xui-service:2053"]

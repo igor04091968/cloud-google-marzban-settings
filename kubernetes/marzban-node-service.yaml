@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: marzban-node
+  namespace: marzban
+spec:
+  selector:
+    app: marzban-node
+  ports:
+    - protocol: TCP
+      port: 62050
+      targetPort: 62050

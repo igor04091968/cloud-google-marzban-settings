@@ -1,0 +1,12 @@
+[Unit]
+Description=Marzban SSH Tunnel
+After=network.target
+
+[Service]
+User=igor04091968
+ExecStart=/usr/bin/autossh -M 0 -N -L 8080:localhost:8000 user@remote_ip
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marzban-controller
+  namespace: marzban
+  labels:
+    app: marzban-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: marzban-controller
+  template:
+    metadata:
+      labels:
+        app: marzban-controller
+    spec:
+      containers:
+      - name: marzban-controller
+        image: gozargah/marzban:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: UVICORN_HOST
+          value: "0.0.0.0"
+        envFrom:
+        - configMapRef:
+            name: marzban-config
+        volumeMounts:
+        - name: marzban-data
+          mountPath: /var/lib/marzban
+      - name: socat-proxy
+        image: alpine/socat
+        args: ["tcp-listen:8080,fork,reuseaddr", "tcp-connect:127.0.0.1:8000"]
+      volumes:
+      - name: marzban-data
+        persistentVolumeClaim:
+          claimName: marzban-data-pvc

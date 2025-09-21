@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: marzban-ingress
+  namespace: marzban
+spec:
+  rules:
+  - host: vds1.iri1968.dpdns.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: marzban-controller
+            port:
+              number: 8443

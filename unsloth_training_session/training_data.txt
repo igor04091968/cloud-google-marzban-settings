@@ -1,0 +1,597 @@
+# Final Working Configuration
+
+This repository contains the final, working configuration for the x-ui container project.
+
+## Key Components:
+
+- **Dockerfile**: The recipe for the main Docker image is located in `/huggingface-x-ui-final/Dockerfile`. This image includes `x-ui`, `chisel`, `wireproxy` for WARP, and `cron` for backups.
+- **Configuration Volume**: The persistent configuration for x-ui is stored in `/x-ui-configs/`. This directory is mounted into the container at `/etc/x-ui`.
+- **Sync Script**: The automatic backup of the configuration to this repository is handled by `/huggingface-x-ui-final/sync.sh`, which is executed by a cron job defined in `/huggingface-x-ui-final/crontab`.
+
+## How to Run
+
+1. Clone this repository.
+2. Ensure `git-lfs` is installed and run `git lfs pull`.
+3. Unpack `huggingface-x-ui-final-backup.tar.gz` and `x-ui-config.tar.gz` as described in `INSTRUCTIONS_FOR_RESTORE.md`.
+4. Build the image: `docker build -t <image_name> ./huggingface-x-ui-final/`
+5. Run the container with the correct volume mounts:
+   ```bash
+   docker run -d --name <container_name> --restart=unless-stopped --cap-add=NET_ADMIN --cap-add=SYS_ADMIN -v "$(pwd)/x-ui-configs":/etc/x-ui -v "$(pwd)":/git -v "$HOME/.ssh":"/root/.ssh:ro" <image_name>
+   ```
+
+
+--- /home/igor/gemini_projects/cloud-google-marzban-settings/INSTRUCTIONS_FOR_RESTORE.md ---
+
+# Инструкция по восстановлению рабочей среды
+
+Этот документ описывает, как полностью воссоздать рабочую среду для `x-ui` с туннелем `chisel` и выходом через `WARP`.
+
+## 1. Настройка сервера `vds1`
+
+Вся конфигурация сервера `vds1` (Nginx, Chisel Server) задокументирована в файле `vds1_and_client_final_setup.md`.
+
+## 2. Развертывание локального контейнера `x-ui`
+
+### Шаг 2.1: Распаковка файлов
+
+1.  Распакуйте архив `huggingface-x-ui-final-backup.tar.gz`. Появится директория `huggingface-x-ui-final` со всеми необходимыми файлами (`Dockerfile`, `start.sh` и т.д.).
+2.  Распакуйте архив `x-ui-config.tar.gz`. Появится директория `x-ui-config` с файлом `x-ui.db`.
+
+### Шаг 2.2: Сборка и запуск контейнера
+
+1.  **Соберите образ Docker:**
+    ```bash
+    docker build -t local-x-ui ./huggingface-x-ui-final/
+    ```
+2.  **Запустите контейнер с постоянным хранилищем:**
+    *   Убедитесь, что директория `x-ui-config` находится в текущей папке.
+    *   Выполните команду, она подключит вашу папку `x-ui-config` к контейнеру:
+    ```bash
+    docker run -d --name local-x-ui-container -v "$(pwd)/x-ui-config":/etc/x-ui local-x-ui
+    ```
+
+### Шаг 2.3: Финальная настройка (выполняется один раз)
+
+После первого запуска контейнера база данных `x-ui.db` будет чистой. Нужно импортировать в нее конфигурацию `xray` с поддержкой WARP.
+
+1.  **Пробросьте порт туннеля на ваш ПК:**
+    *   Локальный контейнер `x-ui` доступен на `vds1` на порту `8001`.
+    *   Выполните на вашем ПК:
+        ```bash
+        ssh -L 8001:127.0.0.1:8001 root@vds1.iri1968.dpdns.org
+        ```
+2.  **Войдите в панель `x-ui`:**
+    *   Откройте в браузере `http://localhost:8001`.
+    *   Логин: `prog10`
+    *   Пароль: `04091968`
+3.  **Импортируйте конфиг:**
+    *   Перейдите в "Настройки панели".
+    *   Скопируйте все содержимое файла `xray_config_with_warp.json` и вставьте в поле для импорта.
+    *   Сохраните. Панель перезапустится с уже примененной и сохраненной конфигурацией.
+
+После этого вся среда полностью настроена и готова к работе. Конфигурация сохранится при перезапусках контейнера.
+
+
+--- /home/igor/gemini_projects/cloud-google-marzban-settings/README.md ---
+
+# Marzban Deployment on Kubernetes with Chisel Tunnel
+
+This project sets up a Marzban instance in a Kubernetes cluster and exposes it to a remote VDS using a chisel tunnel.
+
+## 1. Prerequisites
+
+- A Kubernetes cluster (e.g., Minikube).
+- A remote VDS with root access.
+- `kubectl` configured to connect to your Kubernetes cluster.
+- `ssh` access to your VDS.
+
+## 2. Setup Chisel Server on VDS
+
+1.  SSH into your VDS as root.
+2.  Run the following command to start the chisel server:
+    ```bash
+    nohup /usr/local/bin/chisel server --port 993 --reverse --socks5 --auth cloud:2025 > /dev/null 2>&1 &
+    ```
+
+## 3. Deploy Marzban and Chisel Client to Kubernetes
+
+1.  Apply the Kubernetes manifests in the `kubernetes` directory:
+    ```bash
+    kubectl apply -f kubernetes/
+    ```
+2.  This will deploy:
+    - Marzban controller and node.
+    - A SOCKS5 proxy.
+    - A chisel client that connects to your VDS and creates the following tunnels:
+        - Marzban controller UI on VDS port `8443`.
+        - Kubernetes API server on VDS port `8444`.
+        - SOCKS5 proxy on VDS port `1080`.
+
+## 4. Accessing Services
+
+### Marzban UI
+
+-   The Marzban UI is accessible on your VDS at `http://localhost:8443`.
+-   You can access it from your local machine using an SSH tunnel:
+    ```bash
+    ssh -L 8443:localhost:8443 root@vds1.iri1968.dpdns.org
+    ```
+-   Then open `http://localhost:8443` in your browser.
+
+### Kubernetes API Server
+
+-   The Kubernetes API server is accessible on your VDS at `https://localhost:8444`.
+-   The `vds_kube_config` directory contains a `kubeconfig` file that is pre-configured to use this tunnel.
+-   You can use this `kubeconfig` file on your VDS to manage your cluster.
+
+### SOCKS5 Proxy
+
+-   A SOCKS5 proxy is running in the cluster and is accessible on your VDS at `localhost:1080`.
+-   You can use this proxy to route traffic from your VDS through the Kubernetes cluster.
+
+--- 
+
+## VDS1 Server Setup for Hugging Face X-UI Tunnel
+
+This section describes the server-side setup on `vds1.iri1968.dpdns.org` required to tunnel traffic to the X-UI application running on Hugging Face.
+
+### 1. Chisel Server
+
+The chisel server listens for incoming connections from the chisel client running in the Hugging Face container.
+
+**Start command:**
+```bash
+# Kill any old server process first
+pkill chisel
+
+# Start the new server in the background
+nohup chisel server --port 80 --reverse > /dev/null 2>&1 &
+```
+
+### 2. Socat Port Forwarding for Web UI
+
+The X-UI web panel is exposed on `vds1` via a chisel reverse tunnel on port `8443`. The following `socat` command forwards traffic from the public-facing port `2096` to the tunnel endpoint.
+
+**Start command:**
+```bash
+nohup socat TCP-LISTEN:2096,fork TCP:localhost:8443 > /dev/null 2>&1 &
+```
+*Note: Ensure `socat` is installed: `apt-get update && apt-get install -y socat`*
+
+### 3. Firewall (iptables) Configuration
+
+The following `iptables` rules are required to allow traffic to the public-facing ports.
+
+**Commands to add rules:**
+```bash
+# Allow Web UI traffic
+iptables -A INPUT -p tcp --dport 2096 -j ACCEPT
+
+# Allow Proxy traffic
+iptables -A INPUT -p tcp --dport 38652 -j ACCEPT
+iptables -A INPUT -p tcp --dport 27081 -j ACCEPT
+iptables -A INPUT -p tcp --dport 36955 -j ACCEPT
+```
+
+### 4. Making Firewall Rules Persistent
+
+To ensure the firewall rules survive a reboot, they must be saved.
+
+**Commands to save rules:**
+```bash
+# Install the persistence package
+apt-get install -y iptables-persistent
+
+# Save the current IPv4 rules
+iptables-save > /etc/iptables/rules.v4
+```
+
+--- /home/igor/gemini_projects/cloud-google-marzban-settings/VERIFICATION_PLAN.md ---
+
+# План Проверки Системы
+
+Этот документ описывает мой внутренний план для полной проверки работоспособности всех компонентов системы.
+
+### 1. Проверка Подов Kubernetes
+
+*   **Цель:** Убедиться, что поды `x-ui` и `chisel-client` запущены и здоровы.
+*   **Команда:** `kubectl get pods -n marzban`
+*   **Ожидаемый результат:** Статус `Running` и `READY 1/1` для пода `x-ui`.
+
+### 2. Проверка Службы Kubernetes
+
+*   **Цель:** Убедиться, что служба `xui-service` правильно находит под `x-ui`.
+*   **Команда:** `kubectl describe svc xui-service -n marzban`
+*   **Ожидаемый результат:** Наличие IP-адреса в поле `Endpoints`.
+
+### 3. Проверка Сервера Туннеля на VDS
+
+*   **Цель:** Убедиться, что сервер `chisel` на VDS запущен и слушает нужные порты.
+*   **Команда:** `ssh -i ~/.ssh/id_rsa_vds1 root@vds1.iri1968.dpdns.org "netstat -tuln | grep -E '993|8449'"`
+*   **Ожидаемый результат:** Наличие записей `LISTEN` для портов `993` (для клиента) и `8449` (для прокси).
+
+### 4. Проверка Доступа к Веб-Интерфейсу (End-to-End)
+
+*   **Цель:** Проверить всю цепочку от внешнего пользователя до панели `x-ui`.
+*   **Команда:** `curl -v --head https://vds1.iri1968.dpdns.org/x-ui/`
+*   **Ожидаемый результат:** HTTP-статус `200 OK`.
+
+### 5. Проверка Работы Прокси (После настройки Xray)
+
+*   **Цель:** Убедиться, что настроенный inbound-протокол (например, VLESS+REALITY) работает.
+*   **Метод:** Этот шаг требует проверки с помощью внешнего клиентского приложения (например, v2rayN, Nekoray, Streisand) с использованием предоставленных ключей и параметров.
+*   **Ожидаемый результат:** Успешное прокси-соединение и доступ в интернет через клиентское приложение.
+
+
+--- /home/igor/gemini_projects/cloud-google-marzban-settings/gemini-sshd-container/README.md ---
+
+# Gemini SSHD Container
+
+This container provides a secure and isolated SSH server within the Gemini Cloud Shell environment, allowing the user to connect for administrative or debugging purposes.
+
+## How it Works
+
+The setup consists of three main components:
+
+1.  **The SSHD Container (Gemini's Side):** A Docker container running a clean, minimal SSH server. It is built from the provided `Dockerfile`.
+2.  **The Reverse SSH Tunnel (Gemini's Side):** An SSH process running on the Gemini Cloud Shell host that connects to the `vds1` server and creates a reverse tunnel. This tunnel forwards a port from `vds1` to the SSHD container.
+3.  **The VDS1 Server (Bridge):** The central server acts as a bridge. It listens on a public port (`2223`) and forwards all traffic through the tunnel to the Gemini environment.
+
+## Deployment and Usage
+
+### 1. Build the Docker Image (Gemini's Side)
+
+Navigate to this directory and run the build command:
+
+```bash
+docker build -t gemini-sshd .
+```
+
+### 2. Run the Container and Tunnel (Gemini's Side)
+
+First, run the container:
+
+```bash
+docker run -d -p 127.0.0.1:2224:22 --name sshd-container gemini-sshd
+```
+
+Next, establish the reverse tunnel to `vds1`. **Note:** The path to the private key for `vds1` may need to be adjusted.
+
+```bash
+ssh -N -f -R 2223:localhost:2224 -i /path/to/your/id_rsa_vds1 -o "StrictHostKeyChecking=no" root@vds1.iri1968.dpdns.org
+```
+
+### 3. Connect to Gemini (User's Side)
+
+First, SSH into the `vds1` server as `root`.
+
+```bash
+ssh root@vds1.iri1968.dpdns.org
+```
+
+From `vds1`, connect to the tunnel endpoint. **Note:** This requires the private key `id_ed25519_gemini` to be present in `/root/.ssh/` on `vds1`.
+
+```bash
+ssh -p 2223 -i /root/.ssh/id_ed25519_gemini igor04091968@localhost
+```
+
+You will be connected to the SSH server inside the Gemini environment.
+
+
+--- /home/igor/gemini_projects/cloud-google-marzban-settings/gemini_memory.md ---
+
+# Gemini Assistant Memory Log
+
+This document summarizes key facts and learnings that the Gemini Assistant has stored in its memory for persistent reference.
+
+## General Facts about the Environment
+
+*   **vds1.iri1968.dpdns.org:** This server is a "dumb proxy" with Nginx and Chisel on board, and it acts as a Kubernetes controller. No other services should be installed directly on it. All deployments should occur within its Kubernetes cluster.
+
+## Project: AI Admin Assistant Deployment (In Progress)
+
+*   **Goal:** Setup, run, debug, and deploy the `ai-admin-assistant` application to the Hugging Face Space `igor04091968/ai-admin-assistant`.
+*   **Local Setup:** The application files are in `/home/rachkovii68/huggingface_ai_admin/`.
+*   **Blocking Issue (Resolved):** Application failed on Hugging Face due to health check errors (`405 Method Not Allowed`).
+*   **Fix Implemented:** Wrapped the Gradio app in a FastAPI application to provide a dedicated health check endpoint. Updated `app.py` and `requirements.txt` accordingly.
+*   **Current Status & Next Step:** The code has been corrected. The next action is to upload the updated application to the Hugging Face Space and verify the fix. The user still needs to ensure they are authenticated with `huggingface-cli` before uploading.
+
+### Troubleshooting: Gradio Health Check on Hugging Face
+
+*   **Problem:** The application container on Hugging Face Spaces was crashing. Logs showed a `405 Method Not Allowed` error for `POST` requests to the root URL.
+*   **Cause:** The Hugging Face platform uses health checks that can send `POST` requests to the application's root (`/`). A standard Gradio application does not have a handler for `POST` at the root, causing it to fail.
+*   **Solution:**
+    1.  Wrap the Gradio application in a FastAPI application.
+    2.  Create a specific health check endpoint at `@app.get("/")` that returns a simple success response (e.g., `{"status": "ok"}`).
+    3.  Mount the Gradio app onto the FastAPI app using `gr.mount_gradio_app(app, demo, path="/")`. The Hugging Face infrastructure runs the resulting `app` object.
+    4.  Add `fastapi` and `uvicorn` to `requirements.txt` to ensure the necessary dependencies are installed.
+    5.  The `if __name__ == "__main__"` block was updated to use `uvicorn.run(app, ...)` for a local execution environment that better mimics the production one.
+
+
+## Project-Specific Learnings: x-ui Deployment
+
+### Correct Deployment Steps
+
+1.  **Local Docker Compose Setup for `x-ui` and `chisel-client`:**
+    *   `x-ui` runs locally in Cloud Shell via Docker Compose.
+    *   `chisel-client` runs locally in Cloud Shell via Docker Compose, connecting to the Chisel server on VDS1 to establish a reverse tunnel.
+    *   **`docker-compose.yaml` configuration:**
+        ```yaml
+        version: '''3.3'''
+
+        services:
+          x-ui:
+            image: ghcr.io/mhsanaei/3x-ui:latest
+            container_name: x-ui
+            ports:
+              - "2053:2053" # UI port
+            volumes: 
+              - x-ui-data:/etc/x-ui/ 
+              - x-ui-certs:/root/cert/
+            environment:
+              - XRAY_VMESS_AEAD_FORCED=false
+              - XUI_ENABLE_FAIL2BAN=true
+            restart: always
+
+          chisel-client:
+            image: jpillora/chisel
+            container_name: chisel-client
+            command: client -v --auth "cloud:2025" vds1.iri1968.dpdns.org:993 R:8000:x-ui:2053
+            restart: always
+
+        volumes:
+          x-ui-data:
+          x-ui-certs:
+        ```
+    *   **Deployment Command:** `docker-compose up -d`
+
+2.  **Nginx Configuration on VDS1:**
+    *   **Purpose:** To proxy HTTPS requests from `vds1.iri1968.dpdns.org` to the Chisel reverse tunnel endpoint (`http://127.0.0.1:8443`) on VDS1.
+    *   **Key Actions:**
+        *   Removed old Nginx configurations (e.g., `marzban.conf`).
+        *   Updated `/etc/nginx/sites-available/3x-ui.conf` to serve `x-ui` from the root path (`/`).
+        *   **Nginx Configuration Snippet:**
+            ```nginx
+            server {
+                listen 443 ssl;
+                server_name vds1.iri1968.dpdns.org;
+
+                ssl_certificate /etc/letsencrypt/live/vds1.iri1968.dpdns.org/fullchain.pem;
+                ssl_certificate_key /etc/letsencrypt/live/vds1.iri1968.dpdns.org/privkey.pem;
+
+                location / { # Serve from root path
+                    proxy_pass http://127.0.0.1:8443/;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+            }
+            ```
+        *   **Nginx Commands:** `nginx -t` (test config), `nginx -s reload` (reload Nginx).
+
+3.  **Chisel Server on VDS1:**
+    *   **Configuration:** Must be running with `--port 993 --reverse --socks5 --auth cloud:2025`.
+    *   **Management:** For persistent setup, it should be managed by a systemd service (e.g., `chisel-server.service`).
+
+### Key Learnings and Troubleshooting Insights
+
+*   **`chisel-client` `Restarting (1)` Issues:**
+    *   Initial errors like "Client cannot listen on L:..." were due to local port conflicts or binding issues.
+    *   "A server and least one remote is required" occurred when the `chisel` client command was too simple (lacked a remote specification).
+    *   "Failed to decode remote '-v''" was caused by incorrect positioning of the `-v` (verbose) flag in the `chisel` client command.
+    *   "error dial tcp 127.0.0.1:2053: connect: connection refused" from `chisel-client` to `x-ui` was resolved by using the Docker service name (`x-ui:2053`) instead of `127.0.0.1` or `localhost` for inter-container communication within the Docker Compose network.
+
+*   **Nginx "502 Bad Gateway" Issues:**
+    *   "Empty reply from server" from `curl` on VDS1 to `127.0.0.1:8443` indicated that the Chisel reverse tunnel was not correctly forwarding HTTP traffic or the backend was not responding as expected.
+    *   "Connection refused" from `curl` on VDS1 to `127.0.0.1:8443` was due to the Chisel server not being fully operational or not listening on the IPv4 localhost interface for the reverse tunnel endpoint.
+    *   Nginx `proxy_set_header` syntax errors were caused by unescaped `$` characters when writing the Nginx configuration via `cat <<EOF`.
+    *   The "empty page" issue for `x-ui` was resolved by configuring Nginx to serve `x-ui` from the root path (`/`) instead of a subpath (`/x-ui/`), as `x-ui` expects to be served from the root.
+
+### x-ui Configuration Instructions (for user reference)
+
+*   **Access:** `https://vds1.iri1968.dpdns.org/` (default credentials: `admin`/`admin`).
+*   **General Steps:** Navigate to "Inbounds", click "Add Inbound", configure Protocol, Port (typically `2053` if proxied via Nginx/Chisel), Settings, and add Users.
+*   **Protocol-Specifics:**
+    *   **VLESS:** Use with `ws` or `grpc` network; no TLS in `x-ui` if Nginx handles it; consider `xtls-rprx-vision`.
+    *   **VMess:** Use with `ws` or `grpc` network.
+    *   **Shadowsocks:** Choose encryption method and password.
+    *   **WireGuard:** Requires unique UDP port (e.g., `51820`), open in VDS1 firewall, and a separate UDP tunnel in `chisel` if tunneled.
+*   **Important:** Change default admin credentials immediately; ensure unique paths/ports for protocols; Nginx handles TLS; open VDS1 firewall for new ports; `chisel` needs UDP tunnel for WireGuard.
+
+
+--- /home/igor/gemini_projects/cloud-google-marzban-settings/RECOVERY_PLAN.md ---
+
+# План Восстановления Среды
+
+Этот документ описывает шаги для полного восстановления рабочей среды в новом или сброшенном окружении Google Cloud Shell.
+
+## Шаг 1: Клонирование репозитория
+
+Первый шаг — клонировать этот репозиторий, содержащий все настройки и скрипты.
+
+```bash
+git clone git@github.com:igor04091968/cloud-google-marzban-settings.git
+cd cloud-google-marzban-settings
+```
+
+## Шаг 2: Запуск скрипта восстановления
+
+В репозитории находится главный скрипт `restore_environment.sh`, который автоматизирует всю настройку. Запустите его:
+
+```bash
+./restore_environment.sh
+```
+
+В процессе выполнения скрипт запросит у вас пароль для расшифровки SSH-ключа `id_rsa_vds1`.
+
+### Что делает скрипт?
+
+1.  **Устанавливает пакеты:** Обновляет списки пакетов и устанавливает необходимые утилиты (`jq`, `htop`, `mc`, `openssh`).
+2.  **Настраивает SSH:**
+    *   Создает символическую ссылку на файл конфигурации `~/.ssh/config` из репозитория.
+    *   Расшифровывает приватный ключ `id_rsa_vds1.enc` и помещает его в `~/.ssh/id_rsa_vds1` с правильными правами доступа.
+3.  **Настраивает Git:** Создает символическую ссылку на файл `.gitconfig`.
+4.  **Проверяет работоспособность:** В конце скрипт выполняет автоматическую проверку, пытаясь войти в панель `x-ui` через туннель на VDS. Это подтверждает, что вся цепочка (Cloud Shell -> VDS -> Kubernetes -> x-ui) работает корректно.
+
+## Шаг 3: Завершение
+
+После успешного выполнения скрипта ваша среда полностью готова к работе. Все ключи, конфигурации и утилиты находятся на своих местах.
+
+
+--- /home/igor/gemini_projects/cloud-google-marzban-settings/TODO_after_certbot.md ---
+
+# TODO for Gemini after user completes certbot
+
+**User has taken over to perform the interactive `certbot` DNS-01 challenge.**
+
+When the session resumes, the following steps are required:
+
+1.  **Verify new certificates:** Check that the Let's Encrypt certificate files exist in `/etc/letsencrypt/live/vds1.iri1968.dpdns.org/`. The key files are `fullchain.pem` and `privkey.pem`.
+
+2.  **Update `chisel-server` systemd service:** Modify the `/etc/systemd/system/chisel-server.service` file. The `ExecStart` command needs to be updated to point to the new Let's Encrypt certificate and key.
+    *   **Old path:** `/etc/chisel/cert.pem` & `/etc/chisel/key.pem`
+    *   **New path:** `/etc/letsencrypt/live/vds1.iri1968.dpdns.org/fullchain.pem` & `/etc/letsencrypt/live/vds1.iri1968.dpdns.org/privkey.pem`
+
+3.  **Reload and Restart:** Run `systemctl daemon-reload` and `systemctl restart chisel-server.service`.
+
+4.  **Verify:** Check `systemctl status chisel-server.service` to ensure it started correctly with the new certificates.
+
+5.  **Inform User:** Let the user know the server is ready and that the client command on Hugging Face should work without any special flags (no `--insecure`). The final client command should be: `/usr/local/bin/chisel client -v --auth "cloud:2025" https://vds1.iri1968.dpdns.org:80 R:8000:127.0.0.1:2053`
+
+
+--- /home/igor/gemini_projects/cloud-google-marzban-settings/x-ui-architecture.md ---
+
+# Техническое задание: Архитектура x-ui
+
+Этот документ описывает утвержденную архитектуру для развертывания сервиса x-ui.
+
+## Общая схема
+
+Система состоит из двух основных компонентов:
+1.  **Прокси-сервер (VDS1)**: Виртуальный сервер, выполняющий роль прокси и терминации SSL.
+2.  **Сервер приложения (Hugging Face)**: Docker-контейнер, в котором работает само приложение x-ui.
+
+## Компоненты и их взаимодействие
+
+### 1. Прокси-сервер (vds1.iri1968.dpdns.org)
+
+Этот сервер не содержит логики самого приложения. Его задачи:
+
+*   **Chisel-сервер**: 
+    *   **Назначение**: Принимает туннельные соединения от сервера приложения.
+    *   **Порт**: `8080` (внутренний).
+    *   **Аутентификация**: `cloud:2025`
+
+*   **Nginx**: 
+    *   **Назначение**: Принимает HTTPS трафик от конечных пользователей (клиентов и администратора) и от chisel-клиента, терминирует SSL и проксирует запросы.
+    *   **Порт**: `80` (редирект на 443) и `443` (HTTPS/WSS).
+    *   **Проксирование**: 
+        *   `location /`: `proxy_pass http://127.0.0.1:2023;` (для x-ui панели)
+        *   `location /chisel`: `proxy_pass http://127.0.0.1:8080;` (для chisel-туннеля)
+    *   **SSL**: Используются сертификаты от Let's Encrypt для домена `vds1.iri1968.dpdns.org`. Настроено автоматическое обновление.
+
+### 2. Сервер приложения (Hugging Face)
+
+*   **Среда выполнения**: Docker-контейнер.
+*   **Логика**: Вся бизнес-логика приложения `x-ui` выполняется исключительно внутри этого контейнера.
+*   **Порт x-ui**: `2023`
+*   **Chisel-клиент**: 
+    *   **Назначение**: Устанавливает постоянный обратный туннель к Chisel-серверу на VDS1.
+    *   **Команда**: `/usr/local/bin/chisel client -v --auth "cloud:2025" wss://vds1.iri1968.dpdns.org:443/chisel R:8000:127.0.0.1:2023`
+
+## Потоки данных
+
+1.  **Пользовательский трафик**: 
+    `Клиент/Админ -> https://vds1.iri1968.dpdns.org (Nginx, порт 443) -> Chisel-туннель (локальный порт 2023 на vds1) -> Приложение x-ui в Docker-контейнере (порт 2023)`
+
+2.  **Туннельный трафик**: 
+    `Docker-контейнер (Chisel-клиент) -> wss://vds1.iri1968.dpdns.org:443/chisel (Nginx, порт 443) -> Chisel-сервер (порт 8080)`
+
+
+--- /home/igor/gemini_projects/export_to_llama/hmp_mistral_project_state.md ---
+
+# Состояние проекта HMP-Mistral
+
+## 1. Цель
+
+Настроить локальную работу агента HMP (Hermetic Multi-Agent Platform), используя локально загруженную модель ИИ Mistral. Это позволит агенту работать автономно без обращения к внешним API.
+
+## 2. Компоненты
+
+*   **Агент:** HMP (Hermetic Multi-Agent Platform)
+    *   **Расположение:** `/home/igor/gemini_projects/HMP/`
+*   **Модель ИИ:** Mistral 7B Instruct v0.2 (GGUF)
+    *   **Расположение:** `/home/igor/gemini_projects/models/mistral-7b-instruct-v0.2.Q4_K_M.gguf`
+*   **Инференс-сервер (Планируется):** `llama.cpp` или аналогичный, который будет загружать GGUF-модель и предоставлять OpenAI-совместимый API эндпоинт.
+
+## 3. Текущий статус
+
+*   **Модель ИИ:** Успешно загружена и сохранена локально.
+*   **Код агента HMP:** Полностью исправлен и адаптирован для работы с Python 3.8.
+*   **Конфигурация агента:** Порт API-сервера изменен на `8766` во избежание конфликтов.
+*   **API-сервер агента:** **Запущен** и доступен по адресу `http://127.0.0.1:8766`.
+*   **Обучение агента:** Проведена серия из 4-х уроков по самодиагностике и восстановлению. Уроки успешно сохранены в базе данных агента.
+
+## 4. Следующие шаги
+
+1.  **Настроить `llama-cpp-python`:**
+    *   Установить и запустить его в режиме сервера, указав путь к файлу модели `mistral-7b-instruct-v0.2.Q4_K_M.gguf`.
+2.  **Интегрировать HMP и LLM:**
+    *   Изменить конфигурацию агента HMP, чтобы он отправлял запросы на локальный сервер `llama.cpp`.
+3.  **Протестировать полный цикл:**
+    *   Запустить мыслительный цикл REPL агента и убедиться, что он использует локальную модель Mistral.
+
+
+--- /home/igor/gemini_projects/export_to_llama/knowledge_part_1.md ---
+
+# Core Directive: State Management Algorithm
+This is the primary algorithm for maintaining and recalling context.
+
+## To FREEZE state:
+1. Create a session summary markdown file (session_summary_YYYY-MM-DD.md).
+2. Commit this summary, the latest 'gemini_actions.log', and all changed project files to the 'cloud-google-marzban-settings' git repository.
+3. Push the commit.
+
+## To UNFREEZE state:
+1. Pull the 'cloud-google-marzban-settings' repo.
+2. Find and read the most recent session summary file.
+3. Read the tail of 'gemini_actions.log' to get fine-grained details.
+4. Synthesize the context from these files to determine the true final state.
+
+--- /home/igor/gemini_projects/export_to_llama/knowledge_part_2.md ---
+
+# Correct State: Current Working Environment
+The following containers are running and define the active project.
+
+CONTAINER ID   IMAGE                               NAMES               PORTS
+c0e72476a8c2   unsloth/unsloth:latest              unsloth             0.0.0.0:8888->8888/tcp
+e6c0cabed80c   hmp-agent:local                     hmp_agent           0.0.0.0:8765->8765/tcp
+
+## Interpretation:
+- 'unsloth' is the JupyterLab environment with the AI model on port 8888.
+- 'hmp_agent' is the HMP client on port 8765.
+
+--- /home/igor/gemini_projects/export_to_llama/knowledge_part_3.md ---
+
+# Working Solution: Deploying the AI Model Environment (Jupyter/Unsloth)
+This container provides the JupyterLab environment on port 8888 for AI model training.
+To start it, use the following command:
+docker run --gpus all --restart=unless-stopped -d -p 8888:8888 --name unsloth unsloth/unsloth:latest
+
+--- /home/igor/gemini_projects/export_to_llama/knowledge_part_4.md ---
+
+# Working Solution: Deploying the HMP Agent
+This container runs the HMP agent with its API on port 8765.
+To start it, use the following command:
+docker run --restart=unless-stopped -d -p 8765:8765 --name hmp_agent hmp-agent:local
+
+--- /home/igor/gemini_projects/export_to_llama/knowledge_part_5.md ---
+
+# System Architecture: HMP Agent and Jupyter Interaction
+The system consists of two main Docker containers:
+
+1.  **hmp_agent (port 8765):** This is the primary agent you interact with. It has a learning API endpoint at http://127.0.0.1:8765/messages.
+2.  **unsloth (port 8888):** This container runs a JupyterLab server with a pre-configured environment for fine-tuning and running AI models.
+
+The intended workflow is for the HMP agent to potentially interact with or manage the AI models running within the Jupyter/unsloth environment.

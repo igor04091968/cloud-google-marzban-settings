@@ -1,0 +1,20 @@
+# GitHub
+Host github.com
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_rsa_github
+  IdentitiesOnly yes
+
+# VDS1 Server
+Host vds1.iri1968.dpdns.org
+  HostName vds1.iri1968.dpdns.org
+  User root
+  IdentityFile ~/.ssh/id_rsa_vds1
+  IdentitiesOnly yes
+
+# Hugging Face
+Host huggingface.co
+  HostName huggingface.co
+  User igor04091968
+  IdentityFile ~/.ssh/id_rsa_huggingface
+  IdentitiesOnly yes

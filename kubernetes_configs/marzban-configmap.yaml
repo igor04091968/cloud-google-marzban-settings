@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: marzban-config
+  namespace: marzban
+data:
+  SQLALCHEMY_DATABASE_URL: "sqlite:////var/lib/marzban/db.sqlite3"
+  UVICORN_HOST: "0.0.0.0"
+  UVICORN_PORT: "8000"
+  xray_config.json: |
+    {
+      "log": {
+        "loglevel": "debug"
+      },
+      "routing": {
+        "domainStrategy": "AsIs",
+        "rules": [
+          {
+            "ip": [
+              "geoip:private"
+            ],
+            "outboundTag": "BLOCK",
+            "type": "field"
+          },
+          {
+            "network": "tcp,udp",
+            "outboundTag": "proxy_out",
+            "type": "field"
+          }
+        ]
+      },
+      "inbounds": [
+        {
+          "tag": "Shadowsocks TCP",
+          "listen": "0.0.0.0",
+          "port": 1080,
+          "protocol": "shadowsocks",
+          "settings": {
+            "clients": [],
+            "network": "tcp,udp"
+          }
+        },
+        {
+          "tag": "VMess TCP",
+          "listen": "0.0.0.0",
+          "port": 10086,
+          "protocol": "vmess",
+          "settings": {
+            "clients": []
+          },
+          "streamSettings": {
+            "network": "tcp"
+          }
+        },
+        {
+          "tag": "VLESS TCP",
+          "listen": "0.0.0.0",
+          "port": 443,
+          "protocol": "vless",
+          "settings": {
+            "clients": [],
+            "decryption": "none"
+          },
+          "streamSettings": {
+            "network": "tcp"
+          }
+        },
+        {
+          "tag": "Trojan TCP",
+          "listen": "0.0.0.0",
+          "port": 444,
+          "protocol": "trojan",
+          "settings": {
+            "clients": []
+          }
+        }
+      ],
+      "outbounds": [
+        {
+          "protocol": "freedom",
+          "tag": "DIRECT"
+        },
+        {
+          "protocol": "blackhole",
+          "tag": "BLOCK"
+        },
+        {
+          "protocol": "socks",
+          "tag": "proxy_out",
+          "settings": {
+            "servers": [
+              {
+                "address": "vds1.iri1968.dpdns.org",
+                "port": 1080
+              }
+            ]
+          }
+        }
+      ]
+    }
