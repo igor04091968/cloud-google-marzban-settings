@@ -1,0 +1,2 @@
+*/5 * * * * /app/cf-ddns.sh >> /var/log/cron.log 2>&1
+
