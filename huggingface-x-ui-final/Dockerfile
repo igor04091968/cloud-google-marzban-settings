@@ -1,39 +1,22 @@
-# Используем базовый образ Node.js
-FROM node:20
+FROM debian:bullseye-slim
+RUN apt-get update && apt-get install -y curl unzip gzip binutils && rm -rf /var/lib/apt/lists/*
 
-# Устанавливаем рабочую директорию
-WORKDIR /app
+# Установка 3x-ui
+RUN curl -L -o x-ui.tar.gz "https://github.com/MHSanaei/3x-ui/releases/download/v2.8.4/x-ui-linux-amd64.tar.gz" && \
+    tar -xzf x-ui.tar.gz && \
+    mkdir -p /usr/local/x-ui/bin && \
+    mv x-ui/x-ui /usr/local/x-ui/ && \
+    mv x-ui/bin/xray-linux-amd64 /usr/local/x-ui/bin/ && \
+    chmod +x /usr/local/x-ui/x-ui /usr/local/x-ui/bin/xray-linux-amd64 && \
+    rm -rf x-ui x-ui.tar.gz
 
-# Устанавливаем cron и сразу же очищаем кэш apt в одном слое
-RUN apt-get update && \
-    apt-get install -y cron && \
-    rm -rf /var/lib/apt/lists/*
+# Установка Chisel (НОВАЯ ВЕРСИЯ через curl)
+RUN curl -L -o chisel.gz "https://github.com/jpillora/chisel/releases/download/v1.11.3/chisel_1.11.3_linux_amd64.gz" && \
+    gunzip chisel.gz && \
+    mv chisel /usr/local/bin/chisel && \
+    chmod +x /usr/local/bin/chisel
 
-# Копируем package.json и package-lock.json
-COPY package*.json ./
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# Устанавливаем зависимости Node.js
-RUN npm install
-
-# Копируем все остальные файлы проекта в /app
-COPY . .
-
-# --- Добавленные шаги для cron и ddns ---
-
-# Копируем файл с расписанием cron
-COPY my-cron /etc/cron.d/my-cron
-
-# Копируем и делаем исполняемыми скрипты
-COPY cf-ddns.sh /app/cf-ddns.sh
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/cf-ddns.sh
-RUN chmod +x /app/entrypoint.sh
-
-# --- Конец добавленных шагов ---
-
-# Открываем порт
-EXPOSE 3000
-
-# Устанавливаем точку входа
-ENTRYPOINT ["/app/entrypoint.sh"]
-
+ENTRYPOINT ["/entrypoint.sh"]

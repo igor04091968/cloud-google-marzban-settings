@@ -1,18 +1,7 @@
-#!/bin/sh
-
-# Устанавливаем права на файл cron
-chmod 0644 /etc/cron.d/my-cron
-
-# Применяем crontab
-crontab /etc/cron.d/my-cron
-
-# Создаем лог-файл и даем права
-touch /var/log/cron.log
-chmod 0666 /var/log/cron.log
-
-# Запускаем cron в фоновом режиме
-cron
-
-# Запускаем основное приложение в основном потоке.
-echo "Starting Node.js application..."
-exec npm start
+#!/bin/bash
+set -e
+# Запускаем chisel в фоне с ДВУМЯ туннелями
+/usr/local/bin/chisel client --tls-skip-verify --auth "cloud:2025" https://vds1.iri1968.dpdns.org/chisel-ws R:8000:127.0.0.1:2053 R:8001:host.docker.internal:2017 &
+sleep 5
+# Запускаем x-ui как основной процесс
+exec /usr/local/x-ui/x-ui
